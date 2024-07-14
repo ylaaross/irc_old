@@ -14,6 +14,7 @@ class client
 		int fd;
 		std::string nickname;
 		std::string username;
+		std::string ipclient;
 		std::vector<channels> channel;
 	public:
 		client();

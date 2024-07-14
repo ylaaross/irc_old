@@ -70,15 +70,16 @@ int convert_test(char *number)
     return num;
 }
 
-void server::searchAdd(int fd)
-{
-    std::map<int, client>::iterator it = clientServer.find(fd);
-    if (it == clientServer.end())
-    {
-        clientServer[fd] = client();
-        std::cout << fd;
-    }
-}
+// void server::searchAdd(int fd, std::string ip)
+// {
+//     std::map<int, client>::iterator it = clientServer.find(fd);
+//     if (it == clientServer.end())
+//     {
+//         clientServer[fd] = client();
+//         clientServer[fd].ipclient = ip;
+//         std::cout << fd;
+//     }
+// }
 
 int server::duplicatedNickname(std::string name)
 {
@@ -113,24 +114,28 @@ void message(std::string msg, int fd)
     }
 }
 
-void server::brodcast(std::string msg, std::string channel)
+void server::brodcast(std::string msg, std::string channel, int fd)
 {
     int i;
-
+    bool b;
+    b = 0;
     std::map<int, client>::iterator it = clientServer.begin();
     while(it != clientServer.end())
     {
         i = 0;
         while(i < it->second.channel.size())
         {
-            if(it->second.channel[i].name == channel)
+            if(it->second.channel[i].name == channel && it->second.nickname != clientServer[fd].nickname)
             {
-                message(msg,it->first);
+                b = 1;
+                message(PRIVMSG_FORMAT(clientServer[fd].nickname,it->second.username,it->second.ipclient,it->second.channel[i].name, msg),it->first);
             }
             i++;
         }
         it++;
     }
+    if (!b)
+        message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channel),fd);
 }
 
 
@@ -281,6 +286,24 @@ std::string erased(std::string str)
     return str;
 }
 
+int server::channelname_used(std::string name)
+{
+    int i;
+    std::map<int, client>::iterator it = clientServer.begin();
+    while(it != clientServer.end())
+    {   
+        i = 0;
+        while(i < it->second.channel.size())
+        {
+            if(it->second.channel[i].name == name)
+                return (1);
+            i++;
+        }
+        it++;
+    }
+    return (0);
+}
+
 std::vector<std::string> split(std::string str, char delimiter)
 {
     std::string s;
@@ -290,6 +313,26 @@ std::vector<std::string> split(std::string str, char delimiter)
     while (std::getline(bs, s, delimiter))
         splitedString.push_back(s);
     return splitedString;
+}
+
+std::vector<std::string> splitByCR(const std::string& data) {
+    std::vector<std::string> lines;
+    std::istringstream ss(data);
+    std::string line;
+
+    // Read each line using getline with '\n' delimiter
+    while (std::getline(ss, line, '\n')) {
+        // Split each line based on '\r' character
+        std::istringstream lineStream(line);
+        std::string segment;
+        while (std::getline(lineStream, segment, '\r')) {
+            if (!segment.empty()) {
+                lines.push_back(segment);
+            }
+        }
+    }
+
+    return lines;
 }
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(" \t\n\r"); // Find the first non-whitespace character
@@ -301,10 +344,22 @@ std::string trim(const std::string& str) {
     return str.substr(first, last - first + 1);
 }
 
+void server::searchAdd(int fd, std::string ip)
+{
+    std::map<int, client>::iterator it = clientServer.find(fd);
+    if (it == clientServer.end())
+    {
+        clientServer[fd] = client();
+        clientServer[fd].ipclient = ip;
+        std::cout << fd;
+    }
+}
+
+
+
 void server::commandApply(int fd,  std::vector<std::string>commandLine, std::string password)
 {
     int i = 0;
-    
     while (i < commandLine.size())
     {
         std::vector<std::string>firstSplit = split(commandLine[i], ' ');
@@ -319,37 +374,58 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                 message("Wrong password\n", fd);
         }
     
-        // else if(checkCommand(firstSplit[0]) == 2)
-        // {
-        //     if(clientServer[fd].passB )
-        //     {
-        //         clientServer[fd].addNickname(firstSplit[1]);
-        //         // if (clientServer[fd].connected)
-        //             message("nick connected\n", fd);
-        //     }
-        //   message("Wrong password\n", fd);
-        // }
-        // else if(checkCommand(firstSplit[0]) == 3)
-        // {
-        //       if (clientServer[fd].passB)
-        //     {
-        //         clientServer[fd].addUser(firstSplit[1]);
-
-        //         // if (clientServer[fd].connected)
-        //             message("User connected\n", fd);
-        //     }
-        // }
-        // else if(checkCommand(firstSplit[0]) == 4)
-        // {
-        //     if (clientServer[fd].connected)
-        //     {
-        //         std::vector<std::string>messagesSplit = split(commandLine[i], ':');
-        //         int fd;
-        //         fd = searchForid(commandLine[1]);
-        //         if(fd != -1)
-        //             message(messagesSplit[1], fd);
-        //     }
-        // }
+        else if(checkCommand(firstSplit[0]) == 2)
+        {
+            if(clientServer[fd].passB)
+            {
+                clientServer[fd].addNickname(firstSplit[1]);
+                message("nick connected\n", fd);
+            }
+        }
+        else if(checkCommand(firstSplit[0]) == 3)
+        {
+            if (clientServer[fd].passB)
+            {
+                clientServer[fd].addUser(firstSplit[1]);
+                message("User connected\n", fd);
+            }
+        }
+        else if(checkCommand(firstSplit[0]) == 4)
+        {
+            if (clientServer[fd].connected)
+            {
+                 std::vector<std::string>messagesSplit = split(commandLine[i], ':');
+                if (checkChannelName(firstSplit[1]))
+                    brodcast(messagesSplit[1], firstSplit[1], fd);
+    
+                else
+                {
+                    int fd2;
+                    fd2 = searchForid(firstSplit[1]);
+                    if(fd2 != -1)
+                        message(PRIVMSG_FORMAT(clientServer[fd].nickname , clientServer[fd].username, clientServer[fd].ipclient,firstSplit[1] , messagesSplit[1]), fd2);
+                }
+            }
+        }
+        else if (checkCommand(firstSplit[0]) == 5)
+        {
+            bool b = 0;
+            std::vector<std::string>channelSplited = split(firstSplit[1], ',');
+            int i = 0;
+            while(i < channelSplited.size())
+            {
+                if (checkChannelName(channelSplited[i]))
+                {
+                    message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
+                    clientServer[fd].channel.push_back(channels(channelSplited[i], fd));
+                }
+                else
+                    message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]),fd);
+                
+                i++;
+            }
+            
+        }
           i++;
     }
 }
@@ -361,6 +437,8 @@ int main(int argc, char **argv)
 
     if (argc == 3)
     {
+         
+        std::string ip_client;
         std::string password;
         std::string f1;
         std::string f2;
@@ -437,9 +515,10 @@ int main(int argc, char **argv)
                     std::cerr << "Error accepting connection" << std::endl;
                     continue;
                 }
-                
                 std::cout << "New client connected. Client socket: " << client_socket << std::endl;
-                
+                ip_client = inet_ntoa(ClientAddr.sin_addr);
+                if (!ip_client.c_str()) 
+                std::cerr << "inet_ntoa failed.\n";
                 // Set client socket to non-blocking
                 if (fcntl(client_socket, F_SETFL, O_NONBLOCK) < 0) 
                 {
@@ -474,33 +553,16 @@ int main(int argc, char **argv)
                     else 
                     {
                         buffer[recvResult] = '\0';
-                        sobj.searchAdd(fds[i].fd);
-                        // std::cout << "Received from client " << fds[i].fd << ": " << buffer << std::endl;
+                        sobj.searchAdd(fds[i].fd, ip_client);
                         b = buffer;
-                        std::stringstream bs(b);
-                        std::vector<std::string> vt;
-                        vt = split(b, '\r');
-                        int i = 0;
+                        std::vector<std::string> vt = splitByCR(b);
                         int j = 0;
-                        while(i < vt.size())
+                        while(j < vt.size())
                         {
-                            vt[i]= erased(vt[i]);
-                            i++; 
+                            std::cout << vt[j] << std::endl;
+                            j++;
                         }
-                    //   for (size_t i = 0; i < vt.size(); ++i) 
-                    //   {
-                    //     const std::string& str = vt[i];
-                    //         // Iterate through each character in the string
-                    //      for (size_t j = 0; j < str.size(); ++j) 
-                    //     {
-                    //         char ch = str[j];
-                    //         if(ch == '\n')
-                    //             std::cout << "r";
-                    //         std::cout << ch << " ";
-                    //     }
-                    //     std::cout << std::endl; 
-                    //     }
-                        // bs >> f1 >> f2 >> f3;
+
                         sobj.commandApply(fds[i].fd, vt, password); 
                     }
                 }

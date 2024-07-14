@@ -3,6 +3,7 @@
 channels::channels()
 {
 	name = "";
+	key = "";
 	mode = 0;
 }
 
