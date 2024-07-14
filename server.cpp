@@ -117,21 +117,25 @@ void message(std::string msg, int fd)
 void server::brodcast(std::string msg, std::string channel, int fd)
 {
     int i;
-
+    bool b;
+    b = 0;
     std::map<int, client>::iterator it = clientServer.begin();
     while(it != clientServer.end())
     {
         i = 0;
-        write(1,"1",1);
         while(i < it->second.channel.size())
         {
-           
             if(it->second.channel[i].name == channel && it->second.nickname != clientServer[fd].nickname)
+            {
+                b = 1;
                 message(PRIVMSG_FORMAT(clientServer[fd].nickname,it->second.username,it->second.ipclient,it->second.channel[i].name, msg),it->first);
+            }
             i++;
         }
         it++;
     }
+    if (!b)
+        message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channel),fd);
 }
 
 
@@ -356,7 +360,6 @@ void server::searchAdd(int fd, std::string ip)
 void server::commandApply(int fd,  std::vector<std::string>commandLine, std::string password)
 {
     int i = 0;
-    
     while (i < commandLine.size())
     {
         std::vector<std::string>firstSplit = split(commandLine[i], ' ');
@@ -400,14 +403,14 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     int fd2;
                     fd2 = searchForid(firstSplit[1]);
                     if(fd2 != -1)
-                        message(PRIVMSG_FORMAT(clientServer[fd].nickname, clientServer[fd].username, clientServer[fd].ipclient, firstSplit[1], messagesSplit[1]),5);
+                        message(PRIVMSG_FORMAT(clientServer[fd].nickname , clientServer[fd].username, clientServer[fd].ipclient,firstSplit[1] , messagesSplit[1]), fd2);
                 }
             }
         }
         else if (checkCommand(firstSplit[0]) == 5)
         {
+            bool b = 0;
             std::vector<std::string>channelSplited = split(firstSplit[1], ',');
-
             int i = 0;
             while(i < channelSplited.size())
             {
@@ -416,8 +419,12 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                     clientServer[fd].channel.push_back(channels(channelSplited[i], fd));
                 }
+                else
+                    message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]),fd);
+                
                 i++;
             }
+            
         }
           i++;
     }
