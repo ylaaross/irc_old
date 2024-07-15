@@ -53,6 +53,8 @@ int checkCommand(std::string f1)
         return (4);
     else if(command == "JOIN")
         return (5);
+    else if(command == "TOPIC")
+        return (6);
     return (0);
 }
 
@@ -70,16 +72,7 @@ int convert_test(char *number)
     return num;
 }
 
-// void server::searchAdd(int fd, std::string ip)
-// {
-//     std::map<int, client>::iterator it = clientServer.find(fd);
-//     if (it == clientServer.end())
-//     {
-//         clientServer[fd] = client();
-//         clientServer[fd].ipclient = ip;
-//         std::cout << fd;
-//     }
-// }
+
 
 int server::duplicatedNickname(std::string name)
 {
@@ -99,10 +92,25 @@ int checkChannelName(std::string name)
     return(0);
 }
 
-// int server::channelMember()
-// {
-    
-// }
+
+bool server::availableChannel(std::string name)
+{
+    std::map<int, client>::iterator it  = clientServer.begin();
+    int i;
+    while (it != clientServer.end())
+    {
+        i = 0;
+        while (i < it->second.channel.size())
+        {
+            if(it->second.channel[i].name == name)
+                return (1);
+            i++;
+        }
+        it++;
+    }
+    return (0);
+
+}
 void message(std::string msg, int fd)
 {
     std::string response = msg;
@@ -138,135 +146,6 @@ void server::brodcast(std::string msg, std::string channel, int fd)
         message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channel),fd);
 }
 
-
-
-// void server::commandApply(int fd, int command, std::string fd2,std::string fd3, std::string password)
-// {
-//     if(command == 1)
-//     {
-//         if(fd2 == password )
-//         {
-//             // std::string response = "Correct password";
-//             // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//             // if (sendResult < 0) 
-//             //     std::cerr << "Error sending response to client" << std::endl;
-//             message("Correct password\n", fd);
-//             clientServer[fd].passB = 1;
-//         }
-//         else
-//         {
-//             // std::string response = "Wrong password";
-//             // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//             // if (sendResult < 0) 
-//             //     std::cerr << "Error sending response to client" << std::endl;
-//              message("Wrong password\n", fd);
-//         }
-//     }
-//     else if(command == 2)
-//     {
-
-
-//         if(clientServer[fd].passB )
-//         {
-//             if(duplicatedNickname(fd2))
-//             {
-//                 // std::string response = "nickname duplicated";
-//                 // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//                 // if (sendResult < 0) 
-//                 //     std::cerr << "Error sending response to client" << std::endl;
-//                 message("Nickname duplicated\n", fd);
-//             }
-//             else
-//             {
-//                 clientServer[fd].addNickname(fd2);
-//                 if (clientServer[fd].connected)
-//                 {
-
-//                     // std::string response = "user connected";
-//                     // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//                     // if (sendResult < 0) 
-//                     //     std::cerr << "Error sending response to client" << std::endl;
-//                     message("User connected\n", fd);
-//                 }
-//             }
-//         }
-//         else
-//         {
-//             // std::string response = "you should type the password first";
-//             // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//             // if (sendResult < 0) 
-//             //     std::cerr << "Error sending response to client" << std::endl;
-            
-//             message("You should type the password first\n", fd);
-//         }
-//     }
-//     else if (command == 3)
-//     {
-//         if (clientServer[fd].passB)
-//         {
-//             clientServer[fd].addUser(fd2);
-//             if (clientServer[fd].connected)
-//             {
-//                 //  std::string response = "user connected";
-//                 // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//                 // if (sendResult < 0) 
-//                 //      std::cerr << "Error sending response to client" << std::endl;
-//                 message("User connected\n", fd);
-//             }
-//         }
-//         else
-//         {
-//             // std::string response = "you should type the password first";
-//             // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//             // if (sendResult < 0) 
-//             //     std::cerr << "Error sending response to client" << std::endl;
-//             message("You should type the password first", fd);
-//         }
-//     }
-//     else if (command == 4)
-//     {
-//         if (clientServer[fd].connected)
-//         {
-//             if(checkChannelName(fd2))
-//             {
-//                 fd2.erase(0, 1);
-//                 brodcast(fd3, fd2);
-//             }
-//             else
-//             {
-//                 int fd;
-//                 fd = searchForid(fd2);
-//                 if(fd != -1)
-//                 {
-//                 // std::string response = fd3;
-//                 // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//                 // if (sendResult < 0) 
-//                 //     std::cerr << "Error sending response to client" << std::endl;
-
-
-//                     message(fd3, fd);
-//                 }
-//             }
-//         }
-//         else
-//         {
-//             //  std::string response = "You should be connected first\n" ;
-//             // int sendResult = send(fd, response.c_str(), response.length(), 0);
-//             // if (sendResult < 0) 
-//             //     std::cerr << "Error sending response to client" << std::endl;
-//             message("You should be connected first\n", fd);
-//         }
-//     }
-//     else if (command == 5)
-//     {
-//         if (checkChannelName(fd2))
-//         {
-//             fd2.erase(0, 1);
-//             clientServer[fd].channel.push_back(channels(fd2, fd));
-//             message("channel with the name "+fd2+" is added", fd);
-//         }
-//     }
-// }
 server::~server()
 {
 
@@ -355,7 +234,20 @@ void server::searchAdd(int fd, std::string ip)
     }
 }
 
+bool server::channelMember(std::string channel, int fd)
+{
+    int i;
+    
+    i = 0;
 
+    while (i < clientServer[fd].channel.size())
+    {
+        if (clientServer[fd].channel[i].name == channel)
+            return (1);
+        i++;
+    }
+    return (0);
+}
 
 void server::commandApply(int fd,  std::vector<std::string>commandLine, std::string password)
 {
@@ -396,14 +288,32 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
             {
                  std::vector<std::string>messagesSplit = split(commandLine[i], ':');
                 if (checkChannelName(firstSplit[1]))
-                    brodcast(messagesSplit[1], firstSplit[1], fd);
-    
+                {
+                    if(availableChannel(firstSplit[1]))
+                    {
+                        if(channelMember(firstSplit[1],fd))
+                            brodcast(messagesSplit[1], firstSplit[1], fd);
+                        else
+                            message(ERR_CANNOTSENDTOCHAN(clientServer[fd].ipclient, clientServer[fd].nickname, commandLine[i]),fd);
+                    }
+                    else
+                        message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1]),fd);
+                }
                 else
                 {
-                    int fd2;
-                    fd2 = searchForid(firstSplit[1]);
-                    if(fd2 != -1)
-                        message(PRIVMSG_FORMAT(clientServer[fd].nickname , clientServer[fd].username, clientServer[fd].ipclient,firstSplit[1] , messagesSplit[1]), fd2);
+                    if(firstSplit.size() == 1)
+                        message(ERR_NORECIPIENT(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[0]),fd);
+                    else if(firstSplit.size() == 2)
+                        message(ERR_NOTEXTTOSEND(clientServer[fd].ipclient, clientServer[fd].nickname), fd);
+                    else
+                    {
+                        int fd2;
+                        fd2 = searchForid(firstSplit[1]);
+                        if(fd2 != -1)
+                            message(PRIVMSG_FORMAT(clientServer[fd].nickname , clientServer[fd].username, clientServer[fd].ipclient,firstSplit[1] , messagesSplit[1]), fd2);
+                        else
+                            message(ERR_NOSUCHNICK(clientServer[fd].ipclient,clientServer[fd].nickname),fd);
+                    }
                 }
             }
         }
@@ -417,15 +327,26 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                 if (checkChannelName(channelSplited[i]))
                 {
                     message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                    clientServer[fd].channel.push_back(channels(channelSplited[i], fd));
+                    clientServer[fd].channel.push_back(channels(channelSplited[i], 1 << OPERATOR));
                 }
                 else
-                    message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]),fd);
-                
+                    message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]), fd);
                 i++;
             }
-            
         }
+        else if(checkCommand(firstSplit[0]) == 6)
+        {
+            if (clientServer[fd].connected)
+            {
+                std::vector<std::string>messagesSplit = split(commandLine[i], ':');
+                message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1], messagesSplit[1]),fd);
+            }
+        }
+        
+
+
+
+
           i++;
     }
 }
@@ -562,7 +483,6 @@ int main(int argc, char **argv)
                             std::cout << vt[j] << std::endl;
                             j++;
                         }
-
                         sobj.commandApply(fds[i].fd, vt, password); 
                     }
                 }
