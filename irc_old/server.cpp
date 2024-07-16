@@ -55,6 +55,8 @@ int checkCommand(std::string f1)
         return (5);
     else if(command == "TOPIC")
         return (6);
+    else if(command == "KICK")
+        return (7);
     return (0);
 }
 
@@ -223,6 +225,20 @@ std::string trim(const std::string& str) {
     return str.substr(first, last - first + 1);
 }
 
+bool server::on_channel(std::string name, int fd)
+{
+    int i;
+
+    i = 0;
+    while (i < clientServer[fd].channel.size())
+    {
+        if (clientServer[fd].channel[i].name == name)
+            return (i);
+        i++;
+    }
+    return (0);
+}
+
 void server::searchAdd(int fd, std::string ip)
 {
     std::map<int, client>::iterator it = clientServer.find(fd);
@@ -232,6 +248,35 @@ void server::searchAdd(int fd, std::string ip)
         clientServer[fd].ipclient = ip;
         std::cout << fd;
     }
+}
+
+int server::find_channel_id(std::string name, int fd)
+{
+    int i;
+    
+    i = 0;
+
+    while (i < clientServer[fd].channel.size())
+    {
+        if (clientServer[fd].channel[i].name == name)
+            return (i);
+        i++;
+    }
+    return (-i);
+}
+
+bool server::operator_user(std::string name, int fd)
+{
+    int pos;
+    
+    pos = find_channel_id(name, fd);
+    if(pos != -1)
+    {
+        if(clientServer[fd].channel[pos].mode & (1 << OPERATOR))
+            return (1);
+        return(0);
+    }
+    return(0);
 }
 
 bool server::channelMember(std::string channel, int fd)
@@ -248,6 +293,48 @@ bool server::channelMember(std::string channel, int fd)
     }
     return (0);
 }
+std::string reason(std::string str)
+{
+    std::vector<std::string> splitedString;
+    std::string line = "";
+    splitedString = split(str,':');
+    if(splitedString.size() > 1)
+        line = splitedString[1];
+    return line;
+}
+void server::kickUser(int fd, int index, std::string name,std::string reason)
+{
+    int i;
+    i = 0;
+     std::map<int, client>::iterator it = clientServer.begin();
+      while (i < clientServer[index].channel.size())
+    {
+        if (clientServer[index].channel[i].name == name)
+        {
+            clientServer[index].channel.erase(clientServer[index].channel.begin() + i);
+            int j;
+            while(it != clientServer.end())
+            {
+                j = 0;
+                while(j < it->second.channel.size())
+                {
+                    if(it->second.channel[j].name == name)
+                        message(RPL_KICK(clientServer[fd].nickname, clientServer[fd].username,clientServer[fd].ipclient,name,clientServer[index].nickname,reason),it->first);
+                    j++;
+                }
+                it++;
+            }
+            break;
+        }
+        i++;
+    }
+   
+
+  
+    
+}
+
+
 
 void server::commandApply(int fd,  std::vector<std::string>commandLine, std::string password)
 {
@@ -326,8 +413,11 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
             {
                 if (checkChannelName(channelSplited[i]))
                 {
+                    if(availableChannel(channelSplited[i]))
+                        clientServer[fd].channel.push_back(channels(channelSplited[i], 0));
+                    else
+                        clientServer[fd].channel.push_back(channels(channelSplited[i], 1 << OPERATOR));
                     message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                    clientServer[fd].channel.push_back(channels(channelSplited[i], 1 << OPERATOR));
                 }
                 else
                     message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]), fd);
@@ -336,17 +426,47 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
         }
         else if(checkCommand(firstSplit[0]) == 6)
         {
+            int error_ch = 0;
+            int error_rights = 0;
             if (clientServer[fd].connected)
             {
-                std::vector<std::string>messagesSplit = split(commandLine[i], ':');
-                message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1], messagesSplit[1]),fd);
+                error_ch = on_channel(firstSplit[1],fd);
+                error_rights = operator_user(firstSplit[1], fd);
+                if(error_ch && error_rights)
+                {
+
+                    std::vector<std::string>messagesSplit = split(commandLine[i], ':');
+                    message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1], messagesSplit[1]),fd);
+                }
+                else
+                {
+                    if(error_ch == 0)
+                        message(ERR_NOTONCHANNEL(clientServer[fd].ipclient, firstSplit[1]), fd);
+                    else if(error_ch == 1 && error_rights == 0)
+                        message(ERR_CHANOPRIVSNEEDED(clientServer[fd].ipclient,clientServer[fd].nickname,firstSplit[1]), fd);
+                }
             }
         }
-        
-
-
-
-
+        else if(checkCommand(firstSplit[0]) == 7)
+        {
+            // std::vector<std::string> split(commandLine[i], ':');
+            std::string line = "";
+            int index = -1;
+            if (clientServer[fd].connected)
+            {
+                if(operator_user(firstSplit[1], fd))
+                {
+                    int index = searchForid(firstSplit[2]);
+                    if(index == -1)
+                        message(ERR_NOSUCHNICK(clientServer[fd].ipclient,clientServer[fd].nickname),fd);
+                    else
+                    {
+                        
+                        kickUser(fd, index, firstSplit[1], reason(commandLine[i]));
+                    }
+                }
+            }
+        }
           i++;
     }
 }

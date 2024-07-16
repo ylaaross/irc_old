@@ -17,6 +17,8 @@ enum EnumName {
 	OPERATOR,
     LIMIT
 };
+#define RPL_KICK(kicker, username, host, channel, targetuser, reason) ":" + kicker + "!" + username + "@" + host + " KICK " + channel + " " + targetuser + " :" + reason + "\r\n"
+#define ERR_NOTONCHANNEL(hostname, chann) ":" + hostname + " 442 " + chann + " " + ":You're not on that channel\r\n"
 #define RPL_TOPIC(hostname, nick, chann, topic) ":" + hostname + " 332 " + nick + " " + chann + " :" + topic + "\r\n"
 #define ERR_NOSUCHNICK(hostname, nick) ":" + hostname + " 401 " + nick + " "  + " :No such nick\r\n"
 #define ERR_CANNOTSENDTOCHAN(hostname, nick, channel) ":" + hostname + " 404 " + nick + " " + channel + " :Cannot send to channel\r\n"
@@ -27,11 +29,17 @@ enum EnumName {
 #define PRIVMSG_FORMAT(senderNick, senderUsername, senderHostname, receiver, message) ":" + senderNick + "!~" + senderUsername + "@" + senderHostname + " PRIVMSG " + receiver + " :" + message + "\r\n"
 #define RPL_JOIN(nick, username, channelname, ipaddress) ":" + nick + "!~" + username + "@" + ipaddress + " JOIN " + channelname + "\r\n"
 #define ERR_NOSUCHCHANNEL(hostname, nick, channel) ":" + hostname + " 403 " + nick + " " + channel + " :No such channel\r\n"
+#define ERR_CHANOPRIVSNEEDED(hostname, nick, chann) ":" + hostname + " 482 " + nick + " " + chann + " :You're not channel operator\r\n"
+
 class server
 {
 	public:
 		std::map<int, client> clientServer;
 	public:
+		void kickUser(int fd, int index, std::string name,std::string reason); 
+		int find_channel_id(std::string name, int fd);
+		bool operator_user(std::string name,int fd);
+		bool on_channel(std::string name,int fd);
 		bool availableChannel(std::string name); 
 		int channelMember();
 		void brodcast(std::string msg, std::string channel, int fd);
@@ -41,6 +49,7 @@ class server
 		void commandApply(int fd,  std::vector<std::string>commandLine, std::string password);
 		bool channelMember(std::string channel, int fd);
 		int searchForid(std::string name);
+		int new_channel(std::string name);
 		~server();
 };
 
