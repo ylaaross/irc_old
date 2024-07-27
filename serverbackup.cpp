@@ -101,7 +101,7 @@ int checkChannelName(std::string name)
     return(0);
 }
 
-char		server::modeChannel(std::string name)
+int		server::modeChannel(std::string name)
 {
     std::map<int, client>::iterator it  = clientServer.begin();
     int i;
@@ -582,7 +582,6 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     int j;
                     int size;
                     int oi;
-                    char mode = 1 << POSITIF;
                     bool n = 0;
                     bool p = 0;
                     i = 2;
@@ -600,86 +599,30 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                             if (firstSplit[oi][j] == '-' || firstSplit[oi][j] == '+')
                             {
                                 if (firstSplit[oi][j] == '-')
-                                    mode &= ~(1 << POSITIF); // Use correct bit-clearing logic
+                                {
+                                    n = 1;
+                                    p = 0;
+                                }
                                 else
-                                    mode |= (1 << POSITIF);
+                                {
+                                    p = 1;
+                                    n = 0;
+                                }
                             }
-                            else if(firstSplit[oi][j] == 'i')
-                            {
-                                
-                                if(mode & (1 << POSITIF))
-                                    mode |= 1 << INVITE_ONLY;
-    
-                                else
-                                    mode &= ~ 1 << INVITE_ONLY;
-                                mode |= 1 << POSITIF;
-                            }
-                            else if(firstSplit[oi][j] == 't')
-                            {
-                                if(mode & (1 << POSITIF))
-                                    mode |= 1 << TOPIC;
-                                else
-                                    mode&= ~ (1 << TOPIC);
-                                mode |= 1 << POSITIF;
-                            }
-                            else if (firstSplit[oi][j] == 'k' || firstSplit[oi][j] == 'o' || firstSplit[oi][j] == 'l')
+                            if (firstSplit[oi][j] == 'k' || firstSplit[oi][j] == 'o')
                             {
                                 i++;
-                                if(firstSplit[oi][j] == 'k')
-                                {
-                                    if(mode & (1 << POSITIF))
-                                        mode |= 1 << KEY;
-                                        else
-                                       mode &= ~ (1<< KEY);
-                                }
-                                else if(firstSplit[oi][j] == 'o')
-                                {
-                                    if(mode & (1 << POSITIF))
-                                        mode |= 1 << TOPIC;
-                                    else
-                                        mode &= ~ (1 << TOPIC);
-                                }
-                                else if(firstSplit[oi][j] == 'l')
-                                {
-                                    if(mode & (1 << POSITIF))
-                                        mode |= 1 << LIMIT;
-                                    else
-                                        mode &= ~ (1 << LIMIT);
-                                }
                                 if (i < firstSplit.size())
                                     std::cout << "'" << firstSplit[oi][j] << "'" <<  " key " << firstSplit[i] << std::endl;
                                 else
                                     std::cout  << "'" << firstSplit[oi][j] << "'" << " no key" << std::endl;
-                                mode |= 1 << POSITIF;
                             }
+                            else
+                                std::cout << firstSplit[oi][j] << std::endl;
                             j++;
                         }
                         i++;
                     }
-                     if(mode & (1<<POSITIF))
-                       std::cout << " +p" <<std::endl;
-                    else
-                        std::cout << " -p" <<std::endl;
-                    if(mode & (1<<INVITE_ONLY))
-                       std::cout << " +i" <<std::endl;
-                    else
-                        std::cout << " -i" <<std::endl;
-                     if(mode & (1 << LIMIT))
-                       std::cout << " +l" <<std::endl;
-                    else
-                        std::cout << " -l" <<std::endl;
-                     if(mode & (1 << TOPIC))
-                       std::cout << " +t" <<std::endl;
-                    else
-                        std::cout << " -t" <<std::endl;
-                     if(mode & (1 << KEY))
-                       std::cout << " +k" <<std::endl;
-                    else
-                        std::cout << " -k" <<std::endl;
-                      if(mode & (1 << LIMIT))
-                       std::cout << " +l" <<std::endl;
-                    else
-                        std::cout << " -l" <<std::endl;
                     std::cout << "--" << std::endl;
                 }
             }
@@ -733,6 +676,7 @@ int main(int argc, char **argv)
             std::cout << "error binding address" << std::endl;
             return 1;
         }
+
         if (listen(serv_socket, 5) == -1) 
         {
             std::cout << "error" << std::endl;
