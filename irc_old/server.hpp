@@ -12,18 +12,22 @@
 // l: Set/remove the user limit to channel
 
 
-
-
 enum EnumName
 {
     INVITE_ONLY,
 	TOPIC,
     KEY,
     LIMIT,
-	POSITIF,
-	NEGATIF
+	OPERATOR,
+	POSITIF
 };
+#define RPL_DELOP(hostname, nick, channel, username, target) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " -o " + target + "\r\n"
 
+
+#define RPL_NICK_SET(hostname, new_nick) ":" + new_nick + "!" + new_nick + "@" + hostname + " NICK :" + new_nick + "\r\n"
+
+#define RPL_ADDMODE(hostname, nick, channel, mode, arg, username) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " " + mode + " " + arg + "\r\n"
+#define RPL_DELMODE(hostname, nick, channel, mode, username) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " " + mode + " " + "\r\n"
 #define RPL_INVITE(nick, username, clienthostname, invited, channel) ":" + nick + "!" + username + "@" + clienthostname + " INVITE " + invited + " :" + channel + "\r\n"
 #define RPL_INVITING(hostname, nick, invited, chann) ":" + hostname + " 341 " + nick + " " + invited + " " + chann + "\r\n"
 #define ERR_CHANOPRIVSNEEDED(hostname, nick, chann) ":" + hostname + " 482 " + nick + " " + chann + " :You're not channel operator\r\n"
@@ -47,6 +51,9 @@ class server
 	public:
 		std::map<int, client> clientServer;
 	public:
+		void		updateMode(std::string channel, int  mode, char sign);
+		void		brodcastMode(std::string channel,std::string mode, int fd, std::vector<std::string> arg);
+		void		applicateMode(char mode, std::string channel,int id,char used, std::vector<std::string> args);
 		std::string reason(std::string str, int fd);
 		void		inserUser(std::string nickname, std::string channel);
 		void		kickUser(int fd, int index, std::string name,std::string reason); 
@@ -54,7 +61,7 @@ class server
 		bool		operator_user(std::string name,int fd);
 		bool		on_channel(std::string name,int fd);
 		bool		availableChannel(std::string name);
-		int			modeChannel(std::string name);  
+		char		modeChannel(std::string name);
 		int			channelMember();
 		void		brodcast(std::string msg, std::string channel, int fd);
 		int			channelname_used(std::string name);

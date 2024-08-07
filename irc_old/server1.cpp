@@ -172,51 +172,6 @@ void server::brodcast(std::string msg, std::string channel, int fd)
         it++;
     }
 }
-void server::brodcastMode (std::string channel, std::string mode, int fd, std::vector<std::string> args)
-{
-    int i;
-    bool b;
-
-    std::string msg = "";
-    std::string arg = "";
-    b = 0;
-    i = 0;
-
-    while (i < args.size())
-    {
-        std::cout << i << arg << std::endl;
-        if(!args[i].empty())
-        {
-            arg = args[i];
-            std::cout << "s" << i << arg << std::endl;
-            break;
-        }
-        arg = "";
-        i++;
-    }
-    std::map<int, client>::iterator it = clientServer.begin();
-    if(mode[0] == '+')
-        msg = RPL_ADDMODE(clientServer[fd].ipclient,it->second.nickname,channel, mode ,arg, clientServer[fd].username);
-    else if(mode[0] == '-' && mode[1] != 'o')
-        msg = RPL_DELMODE(clientServer[fd].ipclient,it->second.nickname,channel, mode , clientServer[fd].username);
-    else if(mode[0] == '-' && mode[1] == 'o')
-        msg = RPL_DELOP(clientServer[fd].ipclient,it->second.nickname,channel, mode , args[2]);
-    while(it != clientServer.end())
-    {
-        i = 0;
-        while(i < it->second.channel.size())
-        {
-            if(it->second.channel[i].name == channel)
-            {
-                b = 1;
-                message(msg, it->first);
-            }
-            i++;
-        }
-        it++;
-    }
-}
-
 
 server::~server()
 {
@@ -282,9 +237,9 @@ std::vector<std::string> splitByCR(const std::string& data) {
             }
         }
     }
+
     return lines;
 }
-
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(" \t\n\r"); // Find the first non-whitespace character
     size_t last = str.find_last_not_of(" \t\n\r");   // Find the last non-whitespace character
@@ -408,184 +363,6 @@ void server::kickUser(int fd, int index, std::string name,std::string reason)
          message(ERR_NOSUCHNICK(clientServer[fd].ipclient, clientServer[fd].nickname), fd);
 }
 
- bool limitNumber(std::string str)
-{
-    int i;
-    bool nbr = 0;
-    i = 0;
-                    
-    while(str[i])
-    {
-        if(!(str[i] >= '0'  && str[i] <= '9'))
-        {
-             std::cout<< "not a number" <<std::endl;
-            return 0;
-        }
-            
-        else
-        {
-             std::cout<< "number" <<std::endl;
-            return 1;
-        }
-        i++;
-    }
-    return 1;
-}
-
-void    server::updateMode (std::string channel,  int wich, char sign)
-{
-    int i;
-    int sh;
-    std::map<int, client>::iterator it = clientServer.begin();
-
-    while (it != clientServer.end())
-    {
-        i = 0;
-        while (i < it->second.channel.size())
-        {
-            if (it->second.channel[i].name == channel)
-            {
-                if(sign == '+')
-                    it->second.channel[i].mode |= (1 << wich);
-                else
-                    it->second.channel[i].mode &= ~(1 << wich);
-            }
-            i++;
-        }
-        it++;
-    }
-}
-
-void    server::applicateMode(char mode, std::string channel,int fd, char used ,std::vector<std::string> args)
-{
-    std::map<int, client>::iterator it = clientServer.begin();
-
-    int i;
-    while(it != clientServer.end())
-    {
-        i = 0;
-        while(i < it->second.channel.size())
-        {
-            if(it->second.channel[i].name == channel)
-            {
-                if((mode & (1 << INVITE_ONLY)) && (it->second.channel[i].mode & (1 << INVITE_ONLY)) &&  used & (1 << INVITE_ONLY))
-                    std::cout<< "already INVITE " <<std::endl;
-                else if((mode & (1 << INVITE_ONLY)) && !(it->second.channel[i].mode & (1 << INVITE_ONLY))&&  used & (1 << INVITE_ONLY))
-                {
-                    updateMode(channel,INVITE_ONLY,'+');
-                   // it->second.channel[i].mode |=(1 << INVITE_ONLY);
-                    brodcastMode(channel,"+i", fd, args);
-                    std::cout<< "INVITE " <<std::endl;
-                }
-                else if(!(mode & (1 << INVITE_ONLY)) && (it->second.channel[i].mode & (1 << INVITE_ONLY))&&  used & (1 << INVITE_ONLY))
-                {
-                    updateMode(channel,INVITE_ONLY,'-');
-                    brodcastMode(channel,"-i", fd, args);
-                    std::cout<< "DELETE INVITE " << std::endl;
-                }
-                else if(!(mode & (1 << INVITE_ONLY)) && !(it->second.channel[i].mode & (1 << INVITE_ONLY))&&  (used & (1 << INVITE_ONLY) ))
-                {
-                    std::cout<< "cannot DELETE invite " <<std::endl;
-                }
-
-                if((mode & (1 << TOPIC)) && (it->second.channel[i].mode & (1 << TOPIC)) &&  (used & (1 << TOPIC) ))
-                {
-                   
-                    std::cout<< "already topic " <<std::endl;
-                }
-                else if((mode & (1 << TOPIC)) && !(it->second.channel[i].mode & (1 << TOPIC))&&  used & (1 << TOPIC))
-                {
-                    updateMode(channel,TOPIC,'+');
-                   //  it->second.channel[i].mode |=(1 << TOPIC);
-                    brodcastMode(channel,"+t", fd, args);
-                    std::cout<< "INVITE topic" <<std::endl;
-                }
-                else if(!(mode & (1 << TOPIC)) && (it->second.channel[i].mode & (1 << TOPIC))&&  used & (1 << TOPIC))
-                {
-                    updateMode(channel,TOPIC,'-');
-                    brodcastMode(channel,"-t", fd, args);
-                    std::cout<< "DELETE INVITE topic " << std::endl;
-                }
-                else if(!(mode & (1 << TOPIC)) && !(it->second.channel[i].mode & (1 << TOPIC))&&  used & (1 << TOPIC))
-                    std::cout<< "cannot DELETE topic " <<std::endl;
-                if(!args[0].empty())
-                {
-                    if((mode & (1 << KEY)) && (it->second.channel[i].mode & (1 << KEY)))
-                        std::cout<< "already key" <<std::endl;
-                    else if((mode & (1 << KEY)) && !(it->second.channel[i].mode & (1 << KEY)))
-                    {
-                        updateMode(channel,KEY,'+');
-                        brodcastMode(channel,"+k", fd, args);
-                        std::cout<< "INVITE key" <<std::endl;
-                    }
-                    else if(!(mode & (1 << KEY)) && (it->second.channel[i].mode & (1 << KEY)))
-                    {
-                        updateMode(channel,KEY,'-');
-                      //   it->second.channel[i].mode &= ~(1 << KEY);
-                        brodcastMode(channel,"-k", fd, args);
-                        std::cout<< "DELETE key " << std::endl;
-                    }
-                    else if(!(mode & (1 << KEY)) && !(it->second.channel[i].mode & (1 << KEY)))
-                    {
-                        std::cout<< "cannot DELETE key " <<std::endl;
-                    }   
-                }
-                //limit
-               
-                if (!args[1].empty() && limitNumber(args[1]))
-                {
-                    if((mode & (1 << LIMIT)) && (it->second.channel[i].mode & (1 << LIMIT))  )
-                        std::cout<< "already limit" <<std::endl;
-                    else if((mode & (1 << LIMIT)) && !(it->second.channel[i].mode & (1 << LIMIT)) )
-                    {
-                        updateMode(channel,LIMIT,'+');
-                       //  it->second.channel[i].mode |=(1 << LIMIT);
-                        brodcastMode(channel,"+l", fd, args);
-                        std::cout<< "INVITE limit" <<std::endl;
-                    }
-                    else if(!(mode & (1 << LIMIT)) && (it->second.channel[i].mode & (1 << LIMIT)))
-                    {
-                        updateMode(channel,LIMIT,'-');
-                       //  it->second.channel[i].mode &= ~(1 << LIMIT);
-                        brodcastMode(channel,"-l", fd, args);
-                        std::cout<< "DELETE limit " << std::endl;
-                    }
-                    else if(!(mode & (1 << LIMIT)) && !(it->second.channel[i].mode & (1 << LIMIT)))
-                    {
-                        std::cout<< "cannot DELETE limit " <<std::endl;
-                    }   
-                }
-                //
-                if (!args[2].empty())
-                {
-                    if((mode & (1 << OPERATOR)) && (it->second.channel[i].op == 1))
-                        std::cout<< "already operator" <<std::endl;
-                    else if((mode & (1 << OPERATOR)) && (it->second.channel[i].op == 0))
-                    {
-                        it->second.channel[i].op = 1;
-                        brodcastMode(channel,"+o", fd, args);
-                        std::cout<< "set operator" <<std::endl;
-                    }
-                    else if(!(mode & (1 << OPERATOR)) && (it->second.channel[i].op == 1))
-                    {
-                        it->second.channel[i].op = 0;
-                        brodcastMode(channel,"-o", fd, args);
-                        std::cout<< "DELETE operator " << std::endl;
-                    }
-                    else if(!(mode & (1 << OPERATOR)) && (it->second.channel[i].op == 0))
-                    {
-                        std::cout<< "cannot DELETE operator" <<std::endl;
-                    }   
-                }
-                return ;
-
-            }
-            i++;
-        }
-        it++;
-    }
-}
-
 void server::inserUser(std::string nickname, std::string channel)
 {
     std::map<int, client>::iterator it = clientServer.begin();
@@ -631,7 +408,6 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
             if(clientServer[fd].passB)
             {
                 clientServer[fd].addNickname(firstSplit[1]);
-                message(RPL_NICK_SET(clientServer[fd].ipclient,firstSplit[1]),fd);
                 message("nick connected\n", fd);
             }
         }
@@ -802,21 +578,13 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     message(ERR_NEEDMOREPARAMS(clientServer[fd].nickname, clientServer[fd].ipclient , firstSplit[0]), fd);
                 else
                 {
-                    
-                    std::string     key = "";
-                    std::string     nick = "";
-                    std::string     limit = "";
-                    std::vector<std::string> args(3);
                     int i;
-                    int j = 0;
-                    int size = 0;
-                    int oi = 0;
-                    char mode = 0;
-                    mode = 1 << POSITIF;
-                    char used = 0;
+                    int j;
+                    int size;
+                    int oi;
+                    char mode = 1 << POSITIF;
                     bool n = 0;
                     bool p = 0;
-                    bool enter = 0;
                     i = 2;
                     j = 0;
                     
@@ -832,122 +600,34 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                             if (firstSplit[oi][j] == '-' || firstSplit[oi][j] == '+')
                             {
                                 if (firstSplit[oi][j] == '-')
-                                    mode &= ~(1 << POSITIF);
+                                {
+                                    mode = 0 << POSITIF;
+                                }
                                 else
-                                    mode |= (1 << POSITIF);
+                                {
+                                    mode = 1 << POSITIF;
+                                   
+                                }
+                                if(mode == (1<<POSITIF))
+                                    std::cout<< "p" << std::endl;
+                                else if(mode == (0<<POSITIF))
+                                    std::cout << "n" << mode << std::endl;
                             }
-                            else if(firstSplit[oi][j] == 'i')
+                           // 0000.0000
+                            if (firstSplit[oi][j] == 'k' || firstSplit[oi][j] == 'o')
                             {
-                                used |= 1 << INVITE_ONLY;
-                                enter = 1;
-                                if(mode & (1 << POSITIF))
-                                    mode |= 1 << INVITE_ONLY;
-    
-                                else
-                                    mode &= ~ 1 << INVITE_ONLY;
-                                mode |= 1 << POSITIF;
-                            }
-                            else if(firstSplit[oi][j] == 't')
-                            {
-                                used |= 1 << TOPIC;
-                                enter = 1;
-                                if(mode & (1 << POSITIF))
-                                    mode |= 1 << TOPIC;
-                                else
-                                    mode&= ~ (1 << TOPIC);
-                                mode |= 1 << POSITIF;
-                            }
-                            else if (firstSplit[oi][j] == 'k' || firstSplit[oi][j] == 'o' || firstSplit[oi][j] == 'l')
-                            {
-                                enter = 1;
                                 i++;
-                                if(firstSplit[oi][j] == 'k')
-                                {
-                                    
-                                    if(mode & (1 << POSITIF))
-                                        mode |= 1 << KEY;
-                                    else
-                                        mode &= ~ (1<< KEY);
-                                }
-                                else if(firstSplit[oi][j] == 'o')
-                                {
-                                    if(mode & (1 << POSITIF))
-                                        mode |= 1 << OPERATOR;
-                                    else
-                                        mode &= ~ (1 << OPERATOR);
-                                }
-                                else if(firstSplit[oi][j] == 'l')
-                                {
-                                    used |= 1 << LIMIT;
-                                    if(mode & (1 << POSITIF))
-                                        mode |= 1 << LIMIT;
-                                    else
-                                        mode &= ~ (1 << LIMIT);
-                                }
                                 if (i < firstSplit.size())
-                                {
-                                    if (firstSplit[oi][j] == 'k') 
-                                    {
-                                        used |= 1 << KEY;
-                                        args[0] = firstSplit[i];
-                                    }   
-                                       
-                                    else if(firstSplit[oi][j] == 'l')
-                                    {
-                                        used |= 1 << LIMIT;
-                                        args[1] = firstSplit[i];
-                                    }                                       
-                                    else if(firstSplit[oi][j] == 'o')
-                                    {
-                                        used |= 1 << OPERATOR;
-                                        args[2] = firstSplit[i];
-                                    }
-                                }
-                                    
+                                    std::cout << "'" << firstSplit[oi][j] << "'" <<  " key " << firstSplit[i] << std::endl;
                                 else
-                                {
-                                     if (firstSplit[oi][j] == 'k') 
-                                        args[0] = "";
-                                    else if(firstSplit[oi][j] == 'l')
-                                        args[1] = "";
-                                    else if(firstSplit[oi][j] == 'o')
-                                        args[2] = "";
-                                }
-                                mode |= 1 << POSITIF;
+                                    std::cout  << "'" << firstSplit[oi][j] << "'" << " no key" << std::endl;
                             }
+                            else
+                                std::cout << firstSplit[oi][j] << std::endl;
                             j++;
                         }
                         i++;
                     }
-                    if(enter)
-                    {
-                        applicateMode(mode, firstSplit[1], fd, used, args);
-                        updateMode(firstSplit[1] , mode, used);
-                    }
-                    if(mode & (1<<POSITIF))
-                       std::cout << " +p" <<std::endl;
-                    else
-                        std::cout << " -p" <<std::endl;
-                    if(mode & (1<<INVITE_ONLY))
-                       std::cout << " +i" <<std::endl;
-                    else
-                        std::cout << " -i" <<std::endl;
-                    if(mode & (1 << LIMIT))
-                        std::cout << " +l" <<std::endl;
-                    else
-                        std::cout << " -l" <<std::endl;
-                    if(mode & (1 << TOPIC))
-                       std::cout << " +t" <<std::endl;
-                    else
-                        std::cout << " -t" <<std::endl;
-                     if(mode & (1 << KEY))
-                       std::cout << " +k" <<std::endl;
-                    else
-                        std::cout << " -k" <<std::endl;
-                      if(mode & (1 << LIMIT))
-                       std::cout << " +l" <<std::endl;
-                    else
-                        std::cout << " -l" <<std::endl;
                     std::cout << "--" << std::endl;
                 }
             }
@@ -963,11 +643,11 @@ int main(int argc, char **argv)
     if (argc == 3)
     {
          
-        std::string     ip_client;
-        std::string     password;
-        std::string     f1;
-        std::string     f2;
-        std::string     f3;
+        std::string ip_client;
+        std::string password;
+        std::string f1;
+        std::string f2;
+        std::string f3;
         int s;
         char *c;
         int serv_socket;
@@ -1010,8 +690,7 @@ int main(int argc, char **argv)
         std::cout << "Server listening" << std::endl;
 
         // Set server socket to non-blocking
-        if (fcntl(serv_socket, F_SETFL, O_NONBLOCK) < 0) 
-        {
+        if (fcntl(serv_socket, F_SETFL, O_NONBLOCK) < 0) {
             perror("Failed to set server socket to non-blocking");
             exit(EXIT_FAILURE);
         }
@@ -1036,8 +715,7 @@ int main(int argc, char **argv)
             if (fds[0].revents & POLLIN)
             {
                 int client_socket = accept(serv_socket, (struct sockaddr *)&ClientAddr, &len);
-                if (client_socket < 0) 
-                {
+                if (client_socket < 0) {
                     std::cerr << "Error accepting connection" << std::endl;
                     continue;
                 }

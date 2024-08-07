@@ -8,7 +8,7 @@ channels::channels()
 	op = 0;
 }
 
-channels::channels(std::string name, int mode, int op)
+channels::channels(std::string name, char mode, int op)
 {
 	this->name = name;
 	this->mode = mode;
