@@ -136,9 +136,27 @@ bool server::availableChannel(std::string name)
         it++;
     }
     return (0);
+}
+int  server::idChannel(std::string name, int fd)
+{
+
+    std::map<int, client>::iterator it  = clientServer.begin();
+    int i;
+
+    i = 0;
+    while (i < clientServer[fd].channel.size())
+    {
+        if(clientServer[fd].channel[i].name == name)
+            return i;
+        i++;
+    }
+
+   if(availableChannel(name))
+        return (-1);
+    else
+        return (-2);
 
 }
-
 void message(std::string msg, int fd)
 {
     std::string response = msg;
@@ -802,7 +820,23 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     message(ERR_NEEDMOREPARAMS(clientServer[fd].nickname, clientServer[fd].ipclient , firstSplit[0]), fd);
                 else
                 {
-                    
+                    int pos;
+                    pos = idChannel(firstSplit[1], fd);
+                    if (pos == -1)
+                    {
+                        message(ERR_NOTONCHANNEL(clientServer[fd].ipclient, firstSplit[1]),fd);
+                        return;
+                    }
+                    if (pos == -2)
+                    {
+                        message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient,clientServer[fd].nickname, firstSplit[1]),fd);
+                        return;
+                    }
+                    if (clientServer[fd].channel[pos].op != 1)
+                    {
+                        message(ERR_NOTOP(clientServer[fd].ipclient, firstSplit[1]), fd);
+                        return ;
+                    }   
                     std::string     key = "";
                     std::string     nick = "";
                     std::string     limit = "";

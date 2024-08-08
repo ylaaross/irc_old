@@ -22,7 +22,7 @@ enum EnumName
 	POSITIF
 };
 #define RPL_DELOP(hostname, nick, channel, username, target) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " -o " + target + "\r\n"
-
+#define ERR_NOTOP(hostname, channel) ":" + hostname + " 482 " + channel + " " + ":You're not a channel operator\r\n"
 
 #define RPL_NICK_SET(hostname, new_nick) ":" + new_nick + "!" + new_nick + "@" + hostname + " NICK :" + new_nick + "\r\n"
 
@@ -46,11 +46,13 @@ enum EnumName
 #define ERR_NOSUCHCHANNEL(hostname, nick, channel) ":" + hostname + " 403 " + nick + " " + channel + " :No such channel\r\n"
 #define ERR_CHANOPRIVSNEEDED(hostname, nick, chann) ":" + hostname + " 482 " + nick + " " + chann + " :You're not channel operator\r\n"
 #define ERR_USERONCHANNEL(hostname, nick, nick2, chann) ":" + hostname + " 443 " + nick + " " + nick2 + " " + chann + " :is already on channel\r\n"
+#define ERR_NOTOP(hostname, channel) ":" + hostname + " 482 " + channel + " " + ":You're not a channel operator\r\n"
 class server
 {
 	public:
 		std::map<int, client> clientServer;
 	public:
+		int			idChannel(std::string name,int fd);
 		void		updateMode(std::string channel, int  mode, char sign);
 		void		brodcastMode(std::string channel,std::string mode, int fd, std::vector<std::string> arg);
 		void		applicateMode(char mode, std::string channel,int id,char used, std::vector<std::string> args);
