@@ -435,10 +435,16 @@ void server::kickUser(int fd, int index, std::string name,std::string reason)
     while(str[i])
     {
         if(!(str[i] >= '0'  && str[i] <= '9'))
+        {
+             std::cout<< "not a number" <<std::endl;
             return 0;
+        }
+            
         else
+        {
              std::cout<< "number" <<std::endl;
             return 1;
+        }
         i++;
     }
     return 1;
@@ -461,10 +467,7 @@ void    server::updateMode (std::string channel,  int wich, char sign, std::stri
                 if(wich == KEY)
                    it->second.channel[i].key = arg; 
                 else if(wich == LIMIT)
-                {
-                    const char* c_str = arg.c_str();
-                    it->second.channel[i].limit = convert_test((char*)  c_str);
-                }
+                    it->second.channel[i].key = arg;
                 if(sign == '+')
                     it->second.channel[i].mode |= (1 << wich);
                 else
@@ -493,6 +496,7 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                 else if((mode & (1 << INVITE_ONLY)) && !(it->second.channel[i].mode & (1 << INVITE_ONLY))&&  used & (1 << INVITE_ONLY))
                 {
                     updateMode(channel,INVITE_ONLY,'+',"");
+                   // it->second.channel[i].mode |=(1 << INVITE_ONLY);
                     brodcastMode(channel,"+i", fd, args);
                     std::cout<< "INVITE " <<std::endl;
                 }
@@ -515,6 +519,7 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                 else if((mode & (1 << TOPIC)) && !(it->second.channel[i].mode & (1 << TOPIC))&&  used & (1 << TOPIC))
                 {
                     updateMode(channel,TOPIC,'+' , "");
+                   //  it->second.channel[i].mode |=(1 << TOPIC);
                     brodcastMode(channel,"+t", fd, args);
                     std::cout<< "INVITE topic" <<std::endl;
                 }
@@ -538,16 +543,10 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                     }
                     else if(!(mode & (1 << KEY)) && (it->second.channel[i].mode & (1 << KEY)))
                     {
-                        if(it->second.channel[i].key == args[0])
-                        {
-                            updateMode(channel,KEY,'-', "");
-                            brodcastMode(channel,"-k", fd, args);
-                            std::cout<< "DELETE key " << std::endl;
-                        }
-                        else
-                        {
-                            std::cout<< "invalid key " << std::endl;
-                        }
+                        updateMode(channel,KEY,'-', "");
+
+                        brodcastMode(channel,"-k", fd, args);
+                        std::cout<< "DELETE key " << std::endl;
                     }
                     else if(!(mode & (1 << KEY)) && !(it->second.channel[i].mode & (1 << KEY)))
                         std::cout<< "cannot DELETE key " <<std::endl;   
@@ -560,26 +559,15 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                         std::cout<< "already limit" <<std::endl;
                     else if((mode & (1 << LIMIT)) && !(it->second.channel[i].mode & (1 << LIMIT)) )
                     {
-                        updateMode(channel, LIMIT, '+', args[1]);
+                        updateMode(channel,LIMIT,'+',"");
                         brodcastMode(channel,"+l", fd, args);
                         std::cout<< "INVITE limit" <<std::endl;
                     }
                     else if(!(mode & (1 << LIMIT)) && (it->second.channel[i].mode & (1 << LIMIT)))
                     {
-                        const char* c_str = args[1].c_str();
-
-                        if(convert_test((char *) c_str) == it->second.channel[i].limit)
-                        {
-                            
-                            updateMode(channel, LIMIT, '-', args[1]);
-                            std::stringstream ss;
-                            ss << c_str;
-                            std::string str = ss.str();
-                            args[1] = str;
-                            brodcastMode(channel, "-l", fd, args);
-                            std::cout<< "DELETE limit " << std::endl;
-                        }
-                    
+                        updateMode(channel,LIMIT,'-',"");
+                        brodcastMode(channel,"-l", fd, args);
+                        std::cout<< "DELETE limit " << std::endl;
                     }
                     else if(!(mode & (1 << LIMIT)) && !(it->second.channel[i].mode & (1 << LIMIT)))
                         std::cout<< "cannot DELETE limit " <<std::endl;   
@@ -874,7 +862,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
 
                         while (j < size)
                         {
-                            if(!(firstSplit[oi][j] == 't' || firstSplit[oi][j] == 'i' || firstSplit[oi][j] == 'k' ||  firstSplit[oi][j] == 'o' || firstSplit[oi][j] == 'l' || firstSplit[oi][j] == '+' || firstSplit[oi][j] == '-' ))
+                            if(!(firstSplit[oi][j] == 't' || firstSplit[oi][j] == 'i' || firstSplit[oi][j] == 'k' ||  firstSplit[oi][j] == 'o' || firstSplit[oi][j] == 'l'))
                                 message(ERR_UNKNOWNMODE(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[oi][j]), fd);
                             else if (firstSplit[oi][j] == '-' || firstSplit[oi][j] == '+')
                             {
@@ -891,7 +879,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                     mode |= 1 << INVITE_ONLY;
     
                                 else
-                                    mode &= ~ (1 << INVITE_ONLY);
+                                    mode &= ~ 1 << INVITE_ONLY;
                                 mode |= 1 << POSITIF;
                             }
                             else if(firstSplit[oi][j] == 't')
@@ -966,9 +954,11 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                         }
                         i++;
                     }
-                    
                     if(enter)
+                    {
                         applicateMode(mode, firstSplit[1], fd, used, args);
+                       
+                    }
                     if(mode & (1<<POSITIF))
                        std::cout << " +p" <<std::endl;
                     else

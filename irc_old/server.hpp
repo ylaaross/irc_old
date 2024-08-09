@@ -25,7 +25,7 @@ enum EnumName
 #define ERR_NOTOP(hostname, channel) ":" + hostname + " 482 " + channel + " " + ":You're not a channel operator\r\n"
 
 #define RPL_NICK_SET(hostname, new_nick) ":" + new_nick + "!" + new_nick + "@" + hostname + " NICK :" + new_nick + "\r\n"
-
+#define ERR_UNKNOWNMODE(hostname, nick, c) ":" + hostname + " 472 " + nick + " " + c + " :is unknown mode char to me\r\n"
 #define RPL_ADDMODE(hostname, nick, channel, mode, arg, username) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " " + mode + " " + arg + "\r\n"
 #define RPL_DELMODE(hostname, nick, channel, mode, username) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " " + mode + " " + "\r\n"
 #define RPL_INVITE(nick, username, clienthostname, invited, channel) ":" + nick + "!" + username + "@" + clienthostname + " INVITE " + invited + " :" + channel + "\r\n"
@@ -53,7 +53,7 @@ class server
 		std::map<int, client> clientServer;
 	public:
 		int			idChannel(std::string name,int fd);
-		void		updateMode(std::string channel, int  mode, char sign);
+		void		updateMode(std::string channel, int  mode, char sign, std::string arg);
 		void		brodcastMode(std::string channel,std::string mode, int fd, std::vector<std::string> arg);
 		void		applicateMode(char mode, std::string channel,int id,char used, std::vector<std::string> args);
 		std::string reason(std::string str, int fd);
