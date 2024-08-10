@@ -80,6 +80,15 @@ int convert_test(char *number)
     return (-1);
 }
 
+int convert(char *number)
+{
+    int num;
+    char *rest = 0;
+  
+    num = std::strtod(number ,&rest);
+    return (num);
+}
+
 
 
 int server::duplicatedNickname(std::string name)
@@ -463,7 +472,7 @@ void    server::updateMode (std::string channel,  int wich, char sign, std::stri
                 else if(wich == LIMIT)
                 {
                     const char* c_str = arg.c_str();
-                    it->second.channel[i].limit = convert_test((char*)  c_str);
+                    it->second.channel[i].limit = convert((char*)  c_str);
                 }
                 if(sign == '+')
                     it->second.channel[i].mode |= (1 << wich);
@@ -560,6 +569,12 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                         std::cout<< "already limit" <<std::endl;
                     else if((mode & (1 << LIMIT)) && !(it->second.channel[i].mode & (1 << LIMIT)) )
                     {
+                        const char* c_str = args[1].c_str();
+                        int num = convert((char *) c_str);
+                        std::stringstream ss;
+                        ss << num;
+                        std::string str = ss.str();
+                        args[1] = str;
                         updateMode(channel, LIMIT, '+', args[1]);
                         brodcastMode(channel,"+l", fd, args);
                         std::cout<< "INVITE limit" <<std::endl;
@@ -568,7 +583,7 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                     {
                         const char* c_str = args[1].c_str();
 
-                        if(convert_test((char *) c_str) == it->second.channel[i].limit)
+                        if(convert((char *) c_str) == it->second.channel[i].limit)
                         {
                             
                             updateMode(channel, LIMIT, '-', args[1]);
