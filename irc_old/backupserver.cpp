@@ -240,7 +240,7 @@ void server::brodcast(std::string msg, std::string channel, int fd)
         i = 0;
         while(i < it->second.channel.size())
         {
-            if(it->second.channel[i].name == channel && fd != it->first)
+            if(it->second.channel[i].name == channel && it->second.nickname != clientServer[fd].nickname)
             {
                 b = 1;
                 message(PRIVMSG_FORMAT(clientServer[fd].nickname,it->second.username,it->second.ipclient,it->second.channel[i].name, msg),it->first);
@@ -790,33 +790,24 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                         mode = modeChannel(channelSplited[i]);
                         if (mode & (1 << LIMIT))
                         {
-                            int fd1;
+                            int fd;
                             int i;
-                            i = idChannelfd(channelSplited[i], &fd1);
-                            if (memberChannelNumbers(channelSplited[i]) < clientServer[fd1].channel[i].limit)
+                            i = idChannelfd(channelSplited[i], &fd);
+                            if (memberChannelNumbers(channelSplited[i]) < clientServer[fd].channel[i].limit)
                             {
-                                write(1,"2\n",2);
                                 std::cout << "ssssss" << std::endl;
-                                
                                 clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0));
                             }
                             else
-                            {
-                                message(ERR_CHANNELISFULL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]), fd);
-                            }
+                                 std::cout << "ffsss" << std::endl;
                         }
                         else
-                        {
                             clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0));
-                            message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                        }
 
                     }
                     else
-                    {
                         clientServer[fd].channel.push_back(channels(channelSplited[i], 0 , 1));
-                        message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                    }
+                    message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                 }
                 else
                     message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]), fd);
