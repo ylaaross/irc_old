@@ -1,8 +1,8 @@
 cc		= c++
 
-SRC	=  client.cpp server.cpp channels.cpp
+SRC	=  client.cpp server.cpp channels.cpp 
 
-FLAGS = -Wall -Wextra -Werror  -fsanitize=address 
+FLAGS = -Wall -Wextra -Werror 
 
 fileo	= $(SRC:.cpp=.o)
 
