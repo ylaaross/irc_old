@@ -10,6 +10,6 @@ class channels
 		int							limit;
 		std::vector<std::string>	invited;
 		channels();
-		channels(std::string name, char mode, int op);
+		channels(std::string name, char mode, int op, std::vector<std::string>	invited);
 		
 };

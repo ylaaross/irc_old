@@ -48,11 +48,14 @@ enum EnumName
 #define ERR_CHANOPRIVSNEEDED(hostname, nick, chann) ":" + hostname + " 482 " + nick + " " + chann + " :You're not channel operator\r\n"
 #define ERR_USERONCHANNEL(hostname, nick, nick2, chann) ":" + hostname + " 443 " + nick + " " + nick2 + " " + chann + " :is already on channel\r\n"
 #define ERR_NOTOP(hostname, channel) ":" + hostname + " 482 " + channel + " " + ":You're not a channel operator\r\n"
+#define ERR_INVITEONLY(nick, hostname, channelName) ":" + hostname + " 473 " + nick + " " + channelName + " :Cannot join channel, you must be invited (+i)\r\n"
+
 class server
 {
 	public:
 		std::map<int, client> clientServer;
 	public:
+		bool		checkInvitedPersonnes(std::string name, int channelid, int fd);
 		int			idChannelfd(std::string name,int *fd);
 		char		memberChannelNumbers(std::string name);
 		int			idChannel(std::string name,int fd);

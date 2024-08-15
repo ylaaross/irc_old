@@ -422,6 +422,7 @@ bool server::operator_user(std::string name, int fd)
     if(pos != -1)
     {
         if(clientServer[fd].channel[pos].op)
+             exit(1);
             return (1);
         return(0);
     }
@@ -680,21 +681,6 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
     }
 }
 
-bool server::checkInvitedPersonnes(std::string name, int channelid, int fd)
-{
-    int i;
-
-    i = 0;
-    
-    while(i < clientServer[fd].channel[channelid].invited.size())
-    {
-        if(clientServer[fd].channel[channelid].invited[i] == name)
-            return (1);
-        i++;
-    }
-    return (0);
-}
-
 void server::inserUser(std::string nickname, std::string channel)
 {
     std::map<int, client>::iterator it = clientServer.begin();
@@ -761,7 +747,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                 {
                     if(availableChannel(firstSplit[1]))
                     {
-                        if(channelMember(firstSplit[1], fd))
+                        if(channelMember(firstSplit[1],fd))
                             brodcast(messagesSplit[1], firstSplit[1], fd);
                         else
                             message(ERR_CANNOTSENDTOCHAN(clientServer[fd].ipclient, clientServer[fd].nickname, commandLine[i]),fd);
@@ -795,28 +781,24 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
            
             
             std::vector<std::string>channelSplited = split(firstSplit[1], ',');
-           
             while(i < channelSplited.size())
             {
                 if (checkChannelName(channelSplited[i]))
                 {
-                   
                     if(availableChannel(channelSplited[i]))
                     {
-                      
                         mode = modeChannel(channelSplited[i]);
                         if (mode & (1 << LIMIT))
                         {
                             int fd1;
-                            int id;
-                            id = idChannelfd(channelSplited[i], &fd1);
-                            if (memberChannelNumbers(channelSplited[i]) < clientServer[fd1].channel[id].limit)
+                            int i;
+                            i = idChannelfd(channelSplited[i], &fd1);
+                            if (memberChannelNumbers(channelSplited[i]) < clientServer[fd1].channel[i].limit)
                             {
-                                if (mode & (1 << INVITE_ONLY) && checkInvitedPersonnes(clientServer[fd].nickname, id, fd1 ))
-                                {
-                                    clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0, clientServer[fd1].channel[id].invited));
-                                    message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                                }
+                                write(1,"2\n",2);
+                                std::cout << "ssssss" << std::endl;
+                                
+                                clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0));
                             }
                             else
                             {
@@ -825,60 +807,19 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                         }
                         else
                         {
-                            write(1,"1",1);
-                           
-                            int fd1;
-                            int id;
-                            id = idChannelfd(channelSplited[i], &fd1);
-                            if (mode & (1 << INVITE_ONLY) && checkInvitedPersonnes(clientServer[fd].nickname, id, fd1))
-                            {
-                                 std::cout << "here" << std::endl;
-                                clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0,clientServer[fd1].channel[id].invited));
-                                message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                            }
-                            else if(!(mode & (1 << INVITE_ONLY)))
-                            {
-                                clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0, clientServer[fd1].channel[id].invited));
-                                message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                            }
-                            else 
-                            {
-                                message(ERR_INVITEONLY(clientServer[fd].nickname, clientServer[fd].ipclient, channelSplited[i]), fd);
-                            }
-
+                            clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0));
+                            message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                         }
 
                     }
                     else
                     {
-                        std::vector<std::string> invited;
-                      clientServer[fd].channel.push_back(channels(channelSplited[i], 1 << TOPIC, 1, invited));
+                        clientServer[fd].channel.push_back(channels(channelSplited[i], 0 , 1));
                         message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                     }
                 }
                 else
                     message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]), fd);
-                    
-                    
-                    
-                    std::map<int, client>::iterator it = clientServer.begin();
-                    while(it != clientServer.end())
-                    {
-                        int i = 0;
-                        while(i < it->second.channel.size())
-                        {
-                            int j = 0;
-                            while(j < it->second.channel[i].invited.size())
-                            {
-                                std::cout << it->second.channel[i].invited[j] << std::endl;
-                                j++;
-                            }
-                            
-                            i++;
-                        }
-                       
-                        it++;
-                    }
                 i++;
             }
         }
@@ -946,11 +887,9 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                         message(ERR_NEEDMOREPARAMS(clientServer[fd].nickname, clientServer[fd].ipclient , firstSplit[0]), fd);
                     int index = -1;
                     index = searchForid(firstSplit[1]);
-                    std::cout << "fs1 " << firstSplit[1] << std::endl;
-                    std::cout << "fs2 " << firstSplit[2] << std::endl;
                     if (availableChannel(firstSplit[2]))
                     {
-                        if (!on_channel(firstSplit[1], fd))
+                        if (!on_channel(firstSplit[2], fd))
                         {
                             if (operator_user(firstSplit[2], fd))
                             {
@@ -966,14 +905,13 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                             }
                             else
                                 message(ERR_CHANOPRIVSNEEDED(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1]), fd);
+                            }
+                            else
+                                message(ERR_USERONCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1], firstSplit[2]), fd);
                         }
                         else
-                            message(ERR_USERONCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1], firstSplit[2]), fd);
-
-                    }
-                    else
-                        message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[2]),fd);
-
+                            message(ERR_NOSUCHCHANNEL(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[2]),fd);
+                  
                 }
                 
             }

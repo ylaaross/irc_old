@@ -8,9 +8,10 @@ channels::channels()
 	op = 0;
 }
 
-channels::channels(std::string name, char mode, int op)
+channels::channels(std::string name, char mode, int op , std::vector<std::string>	invited)
 {
 	this->name = name;
 	this->mode = mode;
 	this->op = op;
+	this->invited = invited;
 }

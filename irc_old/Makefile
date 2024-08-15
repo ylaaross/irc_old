@@ -1,6 +1,6 @@
 cc		= c++
 
-SRC	=  client.cpp server.cpp channels.cpp
+SRC	=  client.cpp server.cpp channels.cpp 
 
 FLAGS = -Wall -Wextra -Werror 
 
