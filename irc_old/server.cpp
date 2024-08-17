@@ -260,18 +260,13 @@ void server::brodcastMode (std::string channel, std::string mode, int fd, std::v
     b = 0;
     i = 0;
 
-    while (i < args.size())
-    {
-        std::cout << i << arg << std::endl;
-        if(!args[i].empty())
-        {
-            arg = args[i];
-            std::cout << "s" << i << arg << std::endl;
-            break;
-        }
-        arg = "";
-        i++;
-    }
+    if(mode[1] == 'k')
+        arg = args[0];
+    else if(mode[1] == 'l')
+        arg = args[1];
+    else
+        arg = args[2];
+
     std::map<int, client>::iterator it = clientServer.begin();
     if(mode[0] == '+')
         msg = RPL_ADDMODE(clientServer[fd].ipclient,it->second.nickname,channel, mode ,arg, clientServer[fd].username);
@@ -612,7 +607,7 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                         std::cout<< "cannot DELETE key " <<std::endl;   
                 }
                 //limit
-               
+               std::cout << "hna" <<args[1] << std::endl ;
                 if (!args[1].empty() && limitNumber(args[1]))
                 {
                     if((mode & (1 << LIMIT)) && (it->second.channel[i].mode & (1 << LIMIT))  )
@@ -811,8 +806,11 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                             int id;
                             id = idChannelfd(channelSplited[i], &fd1);
                             
+                       
                             if (memberChannelNumbers(channelSplited[i]) < clientServer[fd1].channel[id].limit)
                             {
+                                     std::cout << "bnumber" << memberChannelNumbers(channelSplited[i]) << std::endl;
+                                std::cout << "limit" <<clientServer[fd1].channel[id].limit << std::endl;
                                 if (mode & (1 << INVITE_ONLY) && checkInvitedPersonnes(clientServer[fd].nickname, id, fd1 ))
                                 {
                                     if(mode & (1 << KEY) && firstSplit.size() >2)
@@ -837,6 +835,11 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                         clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0, clientServer[fd1].channel[id].invited));
                                         message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                                     }
+                                }
+                                else
+                                {
+                                    clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0, clientServer[fd1].channel[id].invited));
+                                    message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd); 
                                 }
                             }
                             else
@@ -1069,14 +1072,14 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     bool enter = 0;
                     i = 2;
                     j = 0;
-                    
+                    int pkey = -1;
                     
                     while (i < firstSplit.size())
                     {
                         j = 0;
                         size = firstSplit[i].size();
                         oi = i;
-
+                        
                         while (j < size)
                         {
                             if(!(firstSplit[oi][j] == 't' || firstSplit[oi][j] == 'i' || firstSplit[oi][j] == 'k' ||  firstSplit[oi][j] == 'o' || firstSplit[oi][j] == 'l' || firstSplit[oi][j] == '+' || firstSplit[oi][j] == '-' ))
@@ -1111,8 +1114,15 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                             }
                             else if (firstSplit[oi][j] == 'k' || firstSplit[oi][j] == 'o' || firstSplit[oi][j] == 'l')
                             {
+                               
                                 enter = 1;
+
                                 i++;
+                                while(i <= pkey)
+                                    i++;
+                                std::cout << "pkey" << pkey << std::endl;
+                                 std::cout << "i" << i << std::endl;
+                                 std::cout << "the key "<< firstSplit[i] << std::endl;
                                 if(firstSplit[oi][j] == 'k')
                                 {
                                     
@@ -1142,12 +1152,14 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                     {
                                         used |= 1 << KEY;
                                         args[0] = firstSplit[i];
+                                        std::cout << "key " << firstSplit[i] << std::endl;
                                     }   
                                        
                                     else if(firstSplit[oi][j] == 'l')
                                     {
                                         used |= 1 << LIMIT;
                                         args[1] = firstSplit[i];
+                                        std::cout << "limit " << firstSplit[i] << std::endl;
                                     }                                       
                                     else if(firstSplit[oi][j] == 'o')
                                     {
@@ -1165,6 +1177,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                     else if(firstSplit[oi][j] == 'o')
                                         args[2] = "";
                                 }
+                                pkey = i;
                                 mode |= 1 << POSITIF;
                             }
                             j++;
