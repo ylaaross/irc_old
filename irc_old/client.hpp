@@ -11,6 +11,7 @@ class client
 		bool nicknameB;
 		bool usernameB;
 		bool connected;
+		std::string command;
 		int fd;
 		std::string nickname;
 		std::string username;
