@@ -12,17 +12,19 @@
 #include <cctype> 
 #include "server.hpp"
 
-void    trim(std::string& str)
+std::vector<std::string> splitBySpaces(const std::string &str) 
 {
-	size_t bigen = str.find_first_not_of(" \n\t\v");
-	size_t last = str.find_last_not_of(" \n\t\v");
-	if (last == std::string::npos)
-		last = str.length() -1;
-	if (bigen == std::string::npos)
-		bigen = 0;
-	str =  str.substr(bigen , (last - bigen + 1));
-}
+    std::vector<std::string> result;
+    std::istringstream iss(str);
+    std::string word;
 
+    // Read each word separated by whitespace (spaces, tabs) and add to the result vector
+    while (iss >> word) {
+        result.push_back(word);
+    }
+
+    return result;
+}
 int server::searchForid(std::string name)
 {
     std::map<int, client>::iterator it = clientServer.begin();
@@ -350,64 +352,34 @@ std::vector<std::string> split(std::string str, char delimiter)
     return splitedString;
 }
 
-std::vector<std::string> splitBySpaces(const std::string &str) {
-    std::vector<std::string> result;
-    std::istringstream iss(str);
-    std::string word;
+std::vector<std::string> splitByCR(const std::string& data) {
+    std::vector<std::string> lines;
+    std::istringstream ss(data);
+    std::string line;
 
-    // Read each word separated by whitespace (spaces, tabs) and add to the result vector
-    while (iss >> word) {
-        result.push_back(word);
-    }
-
-    return result;
-}
-
-// std::vector<std::string> splitByCR(const std::string& data) {
-//     std::vector<std::string> lines;
-//     std::istringstream ss(data);
-//     std::string line;
-
-//     // Read each line using getline with '\n' delimiter
-//     while (std::getline(ss, line, '\n')) {
-//         // Split each line based on '\r' character
-//         std::istringstream lineStream(line);
-//         std::string segment;
-//         while (std::getline(lineStream, segment, '\r')) {
-//             if (!segment.empty()) {
-//                 lines.push_back(segment);
-//             }
-//         }
-//     }
-//     return lines;
-// }
-// Function to split a string by both '\r' and '\n'
-std::vector<std::string> splitByCR(const std::string &str) {
-    std::vector<std::string> result;
-    std::string segment;
-
-    // First, split the string by '\r'
-    std::istringstream iss(str);
-    while (std::getline(iss, segment, '\r')) {
-        // For each segment split by '\r', split further by '\n'
-        std::istringstream lineStream(segment);
-        std::string line;
-        while (std::getline(lineStream, line, '\n')) {
-            result.push_back(line);
+    // Read each line using getline with '\n' delimiter
+    while (std::getline(ss, line, '\n')) {
+        // Split each line based on '\r' character
+        std::istringstream lineStream(line);
+        std::string segment;
+        while (std::getline(lineStream, segment, '\r')) {
+            if (!segment.empty()) {
+                lines.push_back(segment);
+            }
         }
     }
-
-    return result;
+    return lines;
 }
-// std::string trim(const std::string& str) {
-//     size_t first = str.find_first_not_of(" \t\n\r"); // Find the first non-whitespace character
-//     size_t last = str.find_last_not_of(" \t\n\r");   // Find the last non-whitespace character
+
+std::string trim(const std::string& str) {
+    size_t first = str.find_first_not_of(" \t\n\r"); // Find the first non-whitespace character
+    size_t last = str.find_last_not_of(" \t\n\r");   // Find the last non-whitespace character
     
-//     if (first == std::string::npos) // No non-whitespace characters found
-//         return ""; 
+    if (first == std::string::npos) // No non-whitespace characters found
+        return ""; 
     
-//     return str.substr(first, last - first + 1);
-// }
+    return str.substr(first, last - first + 1);
+}
 
 bool server::on_channel(std::string name, int fd)
 {
@@ -521,7 +493,7 @@ void server::kickUser(int fd, int index, std::string name,std::string reason)
          message(ERR_NOSUCHNICK(clientServer[fd].ipclient, clientServer[fd].nickname), fd);
 }
 
-bool limitNumber(std::string str)
+ bool limitNumber(std::string str)
 {
     int i;
     bool nbr = 0;
@@ -530,13 +502,13 @@ bool limitNumber(std::string str)
     while(str[i])
     {
         if(!(str[i] >= '0'  && str[i] <= '9'))
-            return (0);
+            return 0;
         else
              std::cout<< "number" <<std::endl;
-            return (1);
+            return 1;
         i++;
     }
-    return (1);
+    return 1;
 }
 
 void    server::updateMode (std::string channel,  int wich, char sign, std::string arg)
@@ -749,20 +721,26 @@ void server::inserUser(std::string nickname, std::string channel)
     }
 }
 
-int check_mode(char c)
+bool    endOfCommand(std::string str)
 {
+    int     i;
 
+    i = 0;
+    while (i < str.size())
+    {
+        if (str[i] == '\n' || str[i] == '\r')
+            return (1);
+        i++;
+    }
     return (0);
 }
+
 void server::commandApply(int fd,  std::vector<std::string>commandLine, std::string password)
 {
     int i = 0;
-
     while (i < commandLine.size())
     {
-        trim(commandLine[i]);
         std::vector<std::string>firstSplit = splitBySpaces(commandLine[i]);
-        std::cout << firstSplit.size() << std::endl;
         if (firstSplit.size() > 1 && checkCommand(firstSplit[0]) == 1)
         {
             if(firstSplit[1] == password)
@@ -776,20 +754,19 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
     
         else if(checkCommand(firstSplit[0]) == 2)
         {
-            if(clientServer[fd].passB)
-            {
-                clientServer[fd].addNickname(firstSplit[1]);
-                message(RPL_NICK_SET(clientServer[fd].ipclient,firstSplit[1]),fd);
-                message("nick connected\n", fd);
-            }
+        //     bool passB;
+		// bool nicknameB;
+		// bool usernameB;
+            clientServer[fd].addNickname(firstSplit[1]);
+            message(RPL_NICK_SET(clientServer[fd].ipclient,firstSplit[1]),fd);
+            if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+                message("User connected\n", fd);
         }
         else if(checkCommand(firstSplit[0]) == 3)
         {
-            if (clientServer[fd].passB)
-            {
-                clientServer[fd].addUser(firstSplit[1]);
+            clientServer[fd].addUser(firstSplit[1]);
+            if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
                 message("User connected\n", fd);
-            }
         }
         else if(checkCommand(firstSplit[0]) == 4)
         {
@@ -1262,34 +1239,8 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
     }
 }
 
-void remplirChaineAvecZero(char *str, size_t longueur) 
-{
-    if (str != NULL) 
-    {
-        for (size_t i = 0; i < longueur; i++) 
-            str[i] = '0';
-    }
-}
-
-bool    endOfCommand(std::string str)
-{
-    int     i;
-
-    i = 0;
-    while (i < str.size())
-    {
-        if (str[i] == '\n' || str[i] == '\r')
-            return (1);
-        i++;
-    }
-    return (0);
-}
 
 
-void emptyVector(std::vector<std::string> &vec) 
-{
-    vec.clear(); // Clear all elements from the vector
-}
 int main(int argc, char **argv) 
 {
     server sobj;
@@ -1340,7 +1291,7 @@ int main(int argc, char **argv)
             std::cout << "error" << std::endl;
             return 1;
         }
-        //i and o the last one .
+//i and o the last one .
         std::cout << "Server listening" << std::endl;
 
         // Set server socket to non-blocking
@@ -1414,12 +1365,10 @@ int main(int argc, char **argv)
                     {
                         buffer[recvResult] = '\0';
                         sobj.searchAdd(fds[i].fd, ip_client);
-                        sobj.clientServer[fds[i].fd].command += buffer;
-                        remplirChaineAvecZero(buffer,1024);
-                        if(endOfCommand(sobj.clientServer[fds[i].fd].command))
+                        b += buffer;
+                        if(endOfCommand(b))
                         {
-                            std::cout << "bts" << std::endl;
-                            std::vector<std::string> vt = splitByCR(sobj.clientServer[fds[i].fd].command);
+                            std::vector<std::string> vt = splitByCR(b);
                             int j = 0;
                             while(j < vt.size())
                             {
@@ -1427,8 +1376,7 @@ int main(int argc, char **argv)
                                 j++;
                             }
                             sobj.commandApply(fds[i].fd, vt, password);
-                            
-                            sobj.clientServer[fds[i].fd].command = "";
+                            b = "";
                         }
                     }
                 }
