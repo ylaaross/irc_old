@@ -74,6 +74,8 @@ int checkCommand(std::string f1)
         return (8);
     else if(command == "MODE")
         return (9);
+    else if(command == "PART")
+        return (10);
     return (0);
 }
 
@@ -754,9 +756,6 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
     
         else if(checkCommand(firstSplit[0]) == 2)
         {
-        //     bool passB;
-		// bool nicknameB;
-		// bool usernameB;
             clientServer[fd].addNickname(firstSplit[1]);
             message(RPL_NICK_SET(clientServer[fd].ipclient,firstSplit[1]),fd);
             if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
@@ -1235,6 +1234,24 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     std::cout << "--" << std::endl;
                 }
             }
+            else if(checkCommand(firstSplit[0]) == 10)
+            {
+                if (firstSplit.size() == 3)
+                {
+                    int j;
+                    j++;
+                    while (j < clientServer[fd].channel.size())
+                    {
+                        if (clientServer[fd].channel[j].name == firstSplit[1])
+                        {
+                            clientServer[fd].channel.erase(clientServer[fd].channel.begin() + j);
+                            break;
+                            message(RPL_QUIT(clientServer[fd].nickname, clientServer[fd].nickname, firstSplit[2]), fd);
+                        }
+                        j++;
+                    }
+                }
+            }
           i++;
     }
 }
@@ -1359,6 +1376,7 @@ int main(int argc, char **argv)
                         close(fds[i].fd);
                         std::swap(fds[i], fds.back());
                         fds.pop_back();
+                        sobj.clientServer.erase(fds[i].fd);
                         i--;
                     } 
                     else 

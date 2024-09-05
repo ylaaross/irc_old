@@ -50,6 +50,8 @@ enum EnumName
 #define ERR_NOTOP(hostname, channel) ":" + hostname + " 482 " + channel + " " + ":You're not a channel operator\r\n"
 #define ERR_INVITEONLY(nick, hostname, channelName) ":" + hostname + " 473 " + nick + " " + channelName + " :Cannot join channel, you must be invited (+i)\r\n"
 #define ERR_BADCHANNELKEY(nick, hostname, channelName) ":" + hostname + " 475 " + nick + " " + channelName + " :Cannot join channel (+K) - bad key\r\n"
+#define RPL_QUIT(hostname, nick, quitMessage) ":" + hostname + "  QUIT " + nick + " :" + quitMessage + "\r\n"
+
 class server
 {
 	public:
