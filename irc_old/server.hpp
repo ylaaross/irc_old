@@ -24,7 +24,6 @@ enum EnumName
 #define RPL_DELOP(hostname, nick, channel, username, target) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " -o " + target + "\r\n"
 #define ERR_NOTOP(hostname, channel) ":" + hostname + " 482 " + channel + " " + ":You're not a channel operator\r\n"
 #define ERR_CHANNELISFULL(hostname, nick, channelName) ":" + hostname + nick + " 471 " + channelName + " :Cannot join channel (+l) - channel is full, try again later\r\n"
-
 #define RPL_NICK_SET(hostname, new_nick) ":" + new_nick + "!" + new_nick + "@" + hostname + " NICK :" + new_nick + "\r\n"
 #define ERR_UNKNOWNMODE(hostname, nick, c) ":" + hostname + " 472 " + nick + " " + c + " :is unknown mode char to me\r\n"
 #define RPL_ADDMODE(hostname, nick, channel, mode, arg, username) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " " + mode + " " + arg + "\r\n"
@@ -58,9 +57,9 @@ class server
 		std::map<int, client> clientServer;
 	public:
 		bool		checkInvitedPersonnes(std::string name, int channelid, int fd);
-		int			idChannelfd(std::string name,int *fd);
+		int			idChannelfd(std::string name, int *fd);
 		char		memberChannelNumbers(std::string name);
-		int			idChannel(std::string name,int fd);
+		int			idChannel(std::string name, int fd);
 		void		updateMode(std::string channel, int  mode, char sign, std::string arg);
 		void		brodcastMode(std::string channel,std::string mode, int fd, std::vector<std::string> arg);
 		void		applicateMode(char mode, std::string channel,int id,char used, std::vector<std::string> args);
