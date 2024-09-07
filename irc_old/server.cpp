@@ -19,7 +19,8 @@ std::vector<std::string> splitBySpaces(const std::string &str)
     std::string word;
 
     // Read each word separated by whitespace (spaces, tabs) and add to the result vector
-    while (iss >> word) {
+    while (iss >> word) 
+    {
         result.push_back(word);
     }
 
@@ -759,6 +760,50 @@ bool    endOfCommand(std::string str)
     return (0);
 }
 
+void		server::updateChannelTopic(std::string topic, std::string channelname)
+{
+     std::map<int, client>::iterator it = clientServer.begin();
+    
+    int i;
+    while(it != clientServer.end())
+    {
+        i = 0;
+      
+        while(i < it->second.channel.size())
+        {
+            if(it->second.channel[i].name == channelname)
+            {
+                it->second.channel[i].topic = topic;
+                break;
+            }
+            i++;
+        }
+        it++;
+    }
+}
+
+std::string		server::topicName(std::string channelname)
+{
+     std::map<int, client>::iterator it = clientServer.begin();
+    
+    int i;
+    while(it != clientServer.end())
+    {
+        i = 0;
+        while(i < it->second.channel.size())
+        {
+            if(it->second.channel[i].name == channelname)
+            {
+                std::cout << "l9aha" << std::endl;
+                return it->second.channel[i].topic;
+            }
+            i++;
+        }
+        it++;
+    }
+    return "";
+}
+
 void server::commandApply(int fd,  std::vector<std::string>commandLine, std::string password)
 {
     int i = 0;
@@ -994,10 +1039,23 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                 if(error_ch && error_rights)
                 {
                     std::vector<std::string>messagesSplit = split(commandLine[i], ':');
-                    message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1], messagesSplit[1]),fd);
+                    if(messagesSplit.size() == 2)
+                    {
+                        updateChannelTopic(messagesSplit[1], firstSplit[1]);
+                        message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1], messagesSplit[1]),fd);
+                        
+                    }
+                    else if(messagesSplit.size() == 1)
+                    {
+                        message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1],topicName(firstSplit[1])),fd);
+                        std::cout << topicName(firstSplit[1]) << std::endl;
+                        std::cout << "--" << std::endl;
+                        std::cout << firstSplit[1] << std::endl;
+                    }
                 }
                 else
                 {
+                     std::cout << "hna1" <<std::endl;
                     if(error_ch == 0)
                         message(ERR_NOTONCHANNEL(clientServer[fd].ipclient, firstSplit[1]), fd);
                     else if(error_ch == 1 && error_rights == 0)
@@ -1287,6 +1345,8 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     }
                 }
             }
+            else if(checkCommand(firstSplit[0]) == 0)
+                message(RPL_COMMAND_NOT_FOUND( clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[0]),fd);
           i++;
     }
 }
@@ -1412,7 +1472,6 @@ int main(int argc, char **argv)
                         close(fds[i].fd);
                         std::swap(fds[i], fds.back());
                         fds.pop_back();
-                      
 
                         i--;
                     } 

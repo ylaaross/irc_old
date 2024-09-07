@@ -50,12 +50,14 @@ enum EnumName
 #define ERR_INVITEONLY(nick, hostname, channelName) ":" + hostname + " 473 " + nick + " " + channelName + " :Cannot join channel, you must be invited (+i)\r\n"
 #define ERR_BADCHANNELKEY(nick, hostname, channelName) ":" + hostname + " 475 " + nick + " " + channelName + " :Cannot join channel (+K) - bad key\r\n"
 #define RPL_QUIT(hostname, nick, quitMessage) ":" + hostname + "  QUIT " + nick + " :" + quitMessage + "\r\n"
-
+#define RPL_COMMAND_NOT_FOUND(hostname, nick, command) ":" + hostname + " 404 " + nick + " " + command + " :Command not found\r\n"
 class server
 {
 	public:
 		std::map<int, client> clientServer;
 	public:
+		std::string	topicName(std::string channelname);
+		void		updateChannelTopic(std::string topic, std::string channelname);
 		bool		checkInvitedPersonnes(std::string name, int channelid, int fd);
 		int			idChannelfd(std::string name, int *fd);
 		char		memberChannelNumbers(std::string name);
