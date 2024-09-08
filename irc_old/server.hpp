@@ -66,6 +66,8 @@ class server
 	public:
 		std::map<int, client> clientServer;
 	public:
+		void		kickclients(std::string channel , int fd);
+		void		updateclients(std::string channel , int fd);
 		std::string clientChannels(std::string channel);
 		bool		alreadyUsedNickname(std::string nickname);
 		std::string	topicName(std::string channelname);
