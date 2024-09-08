@@ -38,6 +38,7 @@ void    client::addUser(std::string const username)
 
 client::client()
 {
+    duplicateNickname = 0;                                                                                          
     passB = 0;
     fd = 0;
     nicknameB = 0;

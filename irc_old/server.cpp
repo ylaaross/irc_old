@@ -713,6 +713,20 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
     }
 }
 
+bool	server::alreadyUsedNickname(std::string nickname)
+{
+    std::map<int, client>::iterator it  = clientServer.begin();
+    
+    int i;
+    while(it != clientServer.end())
+    {
+        if(it->second.nickname == nickname)
+            return (1);
+        it++;
+    }
+    return (0);
+}
+
 bool server::checkInvitedPersonnes(std::string name, int channelid, int fd)
 {
     int i;
@@ -793,10 +807,7 @@ std::string		server::topicName(std::string channelname)
         while(i < it->second.channel.size())
         {
             if(it->second.channel[i].name == channelname)
-            {
-                std::cout << "l9aha" << std::endl;
                 return it->second.channel[i].topic;
-            }
             i++;
         }
         it++;
@@ -810,7 +821,11 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
     while (i < commandLine.size())
     {
         std::vector<std::string>firstSplit = splitBySpaces(commandLine[i]);
-        if (firstSplit.size() > 1 && checkCommand(firstSplit[0]) == 1)
+        if(clientServer[fd].duplicateNickname)
+            message("Your nickname is duplicated you should create another account\n\r", fd);
+        
+
+        else if (firstSplit.size() > 1 && checkCommand(firstSplit[0]) == 1)
         {
             if(firstSplit[1] == password)
             {
@@ -828,11 +843,20 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
     
         else if(checkCommand(firstSplit[0]) == 2)
         {
-            clientServer[fd].addNickname(firstSplit[1]);
-            message(RPL_NICK_SET(clientServer[fd].ipclient,firstSplit[1]),fd);
-            if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+            if(!alreadyUsedNickname(firstSplit[1]))
             {
-                std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
+                clientServer[fd].addNickname(firstSplit[1]);
+                message(RPL_NICK_SET(clientServer[fd].ipclient, firstSplit[1]), fd);
+                if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+                {
+                    std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
+                    message(msg, fd);
+                }
+            }
+            else
+            {
+                clientServer[fd].duplicateNickname = 1;
+                std::string msg = "Error :Duplicated nickname \n\r";
                 message(msg, fd);
             }
         }
@@ -919,6 +943,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                         }
                                         else
                                         {
+    
                                              std::cout << "hnaNOO" << std::endl;
                                         }
                                     }
@@ -968,7 +993,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                         message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                                     }
                                     else
-                                        std::cout << "11NOO" << std::endl;
+                                         message("Wrong password" , fd);
                                 }
                                     else if(mode & (1 << KEY) && firstSplit.size() <= 2)
                                     {
@@ -998,8 +1023,9 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     {
                         std::cout << "3" << std::endl;
                         std::vector<std::string> invited;
-                      clientServer[fd].channel.push_back(channels(channelSplited[i], 1 << TOPIC, 1, invited));
+                        clientServer[fd].channel.push_back(channels(channelSplited[i], 1 << TOPIC, 1, invited));
                         message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
+                        message(RPL_NAMREPLY(clientServer[fd].ipclient,'@'+ clientServer[fd].nickname  , channelSplited[i], clientServer[fd].nickname) , fd);
                     }
                 }
                 else
@@ -1049,13 +1075,11 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     {
                         message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1],topicName(firstSplit[1])),fd);
                         std::cout << topicName(firstSplit[1]) << std::endl;
-                        std::cout << "--" << std::endl;
                         std::cout << firstSplit[1] << std::endl;
                     }
                 }
                 else
                 {
-                     std::cout << "hna1" <<std::endl;
                     if(error_ch == 0)
                         message(ERR_NOTONCHANNEL(clientServer[fd].ipclient, firstSplit[1]), fd);
                     else if(error_ch == 1 && error_rights == 0)
@@ -1085,7 +1109,6 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     }
                     else
                         message(ERR_CHANOPRIVSNEEDED(clientServer[fd].ipclient,clientServer[fd].nickname,firstSplit[1]),fd);
-
                 }
             }
         }
@@ -1095,17 +1118,11 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
             if (clientServer[fd].connected)
             {
                 if(firstSplit.size() < 2)
-                {
-                    std::cout << "sss" << std::endl;
                     ERR_NEEDMOREPARAMS(clientServer[fd].nickname ,clientServer[fd].ipclient,firstSplit[0]);
-                }
                 else
                 {
                     if (firstSplit.size() < 3)
-                    {
-                        std::cout << "sssh--" << std::endl;
                         message(ERR_NEEDMOREPARAMS(clientServer[fd].nickname, clientServer[fd].ipclient , firstSplit[0]), fd);
-                    }
                     int index = -1;
                     index = searchForid(firstSplit[1]);
                     std::cout << "fs1 " << firstSplit[1] << std::endl;
