@@ -17,13 +17,8 @@ std::vector<std::string> splitBySpaces(const std::string &str)
     std::vector<std::string> result;
     std::istringstream iss(str);
     std::string word;
-
-    // Read each word separated by whitespace (spaces, tabs) and add to the result vector
     while (iss >> word) 
-    {
         result.push_back(word);
-    }
-
     return result;
 }
 int server::searchForid(std::string name)
@@ -888,6 +883,37 @@ std::string		server::topicName(std::string channelname)
     return "";
 }
 
+int     count_words(std::string str, bool *tr)
+{
+    int i;
+
+    i = 0;
+    bool newword = 1;
+    int count = 0;
+    while (i < str.size() && str[i] != ':')
+    {
+        if(str[i] != ' ' && newword == 1)
+        {
+            count++;
+            newword = 0;
+        }
+        else if(str[i] == ' ' && newword == 0)
+            newword = 1;
+        i++;
+    }
+    while (i < str.size())
+    {
+        if (str[i] != ':')
+        {
+            *tr = 1; 
+            count++;
+            break;
+        }
+        i++;
+    }
+    return (count);
+}
+
 void server::commandApply(int fd,  std::vector<std::string>commandLine, std::string password)
 {
     int i = 0;
@@ -904,6 +930,9 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
             {
                 message("Correct password\n\r", fd);
                 clientServer[fd].passB = 1;
+                std::cout << "passb" << clientServer[fd].passB << std::endl;
+                std::cout << "nicknameb" << clientServer[fd].nicknameB<< std::endl;
+                std::cout << "usernameB" << clientServer[fd].usernameB<< std::endl;
                 if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
                 {
                     std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
@@ -920,6 +949,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
             {
                 clientServer[fd].addNickname(firstSplit[1]);
                 message(RPL_NICK_SET(clientServer[fd].ipclient, firstSplit[1]), fd);
+                clientServer[fd].nicknameB = 1;
                 if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
                 {
                     std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
@@ -935,12 +965,21 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
         }
         else if(checkCommand(firstSplit[0]) == 3)
         {
-            clientServer[fd].addUser(firstSplit[1]);
-            if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+            bool tr=0;
+            std::vector<std::string>username = split(commandLine[i], ':');
+            if(count_words(commandLine[i], &tr) == 5 && tr)
             {
-                std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
-                message(msg, fd);
+                std::cout << username[1] << std::endl;
+                clientServer[fd].addUser(username[1]);
+                clientServer[fd].usernameB = 1;
+                if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+                {
+                    std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
+                    message(msg, fd);
+                }
             }
+            else
+                message("You need more or less parameters \r\n", fd);
         }
         else if(checkCommand(firstSplit[0]) == 4)
         {
