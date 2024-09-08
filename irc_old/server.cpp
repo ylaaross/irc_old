@@ -727,6 +727,27 @@ bool	server::alreadyUsedNickname(std::string nickname)
     return (0);
 }
 
+std::string server::clientChannels(std::string channel)
+{
+    std::string contenated = "";
+
+     std::map<int, client>::iterator it = clientServer.begin();
+    
+    int i;
+    while (it != clientServer.end())
+    {
+        i = 0;
+        while (i < it->second.channel.size())
+        {
+            if (it->second.channel[i].name == channel)
+                contenated += "@" +  it->second.nickname;  
+            i++;
+        }
+        it++;
+    }
+    return contenated;
+}
+
 bool server::checkInvitedPersonnes(std::string name, int channelid, int fd)
 {
     int i;
@@ -1025,7 +1046,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                         std::vector<std::string> invited;
                         clientServer[fd].channel.push_back(channels(channelSplited[i], 1 << TOPIC, 1, invited));
                         message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                        message(RPL_NAMREPLY(clientServer[fd].ipclient,'@'+ clientServer[fd].nickname  , channelSplited[i], clientServer[fd].nickname) , fd);
+                        message(RPL_NAMREPLY(clientServer[fd].ipclient,"@"+ clientServer[fd].nickname +" @ffff"   , channelSplited[i], clientServer[fd].nickname) , fd);
                     }
                 }
                 else
