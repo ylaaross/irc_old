@@ -9,7 +9,7 @@ void    client::addFd(int fd)
 void    client::addNickname(std::string const nickname)
 {
     
-    if (passB && !nickname.empty())
+    if (!nickname.empty())
     {
         this->nickname =  nickname;
         nicknameB = 1;
@@ -24,7 +24,7 @@ void    client::addNickname(std::string const nickname)
 
 void    client::addUser(std::string const username)
 {
-    if (passB && !username.empty())
+    if (!username.empty())
     {
         this->username = username;
         usernameB = 1;
@@ -38,6 +38,7 @@ void    client::addUser(std::string const username)
 
 client::client()
 {
+    duplicateNickname = 0;                                                                                          
     passB = 0;
     fd = 0;
     nicknameB = 0;

@@ -21,10 +21,19 @@ enum EnumName
 	OPERATOR,
 	POSITIF
 };
+
+#define RPL_TOPICDISPLAY(hostname, nick, channel, topic) ":" + hostname + " 332 " + nick + " " + channel + " :" + topic + "\r\n"
+#define RPL_TOPICWHOTIME(topicsetter, nick, hostname, channelName) ":" + hostname + " 333 " + nick + " " + channelName + " " + topicsetter + "!~" + topicsetter + "@" + hostname + "\r\n"
+#define RPL_NAMREPLY(hostname, clients, channelname, nick) ":" + hostname + " 353 " + nick + " = " + channelname + " :" + clients + "\r\n"
+#define RPL_ENDOFNAMES(hostname, nick, channelname) ":" + hostname + " 366 " + nick + " " + channelname + " :END of /NAMES list\r\n"
+
+
+#define RPL_NAMREPLY(hostname, clients, channelname, nick) ":" + hostname + " 353 " + nick + " = " + channelname + " :" + clients + "\r\n"
+
+#define RPL_NAMREPLY(hostname, clients, channelname, nick) ":" + hostname + " 353 " + nick + " = " + channelname + " :" + clients + "\r\n"
 #define RPL_DELOP(hostname, nick, channel, username, target) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " -o " + target + "\r\n"
 #define ERR_NOTOP(hostname, channel) ":" + hostname + " 482 " + channel + " " + ":You're not a channel operator\r\n"
 #define ERR_CHANNELISFULL(hostname, nick, channelName) ":" + hostname + nick + " 471 " + channelName + " :Cannot join channel (+l) - channel is full, try again later\r\n"
-
 #define RPL_NICK_SET(hostname, new_nick) ":" + new_nick + "!" + new_nick + "@" + hostname + " NICK :" + new_nick + "\r\n"
 #define ERR_UNKNOWNMODE(hostname, nick, c) ":" + hostname + " 472 " + nick + " " + c + " :is unknown mode char to me\r\n"
 #define RPL_ADDMODE(hostname, nick, channel, mode, arg, username) ":" + nick + "!~" + username + "@" + hostname + " MODE " + channel + " " + mode + " " + arg + "\r\n"
@@ -50,15 +59,23 @@ enum EnumName
 #define ERR_NOTOP(hostname, channel) ":" + hostname + " 482 " + channel + " " + ":You're not a channel operator\r\n"
 #define ERR_INVITEONLY(nick, hostname, channelName) ":" + hostname + " 473 " + nick + " " + channelName + " :Cannot join channel, you must be invited (+i)\r\n"
 #define ERR_BADCHANNELKEY(nick, hostname, channelName) ":" + hostname + " 475 " + nick + " " + channelName + " :Cannot join channel (+K) - bad key\r\n"
+#define RPL_QUIT(hostname, nick, quitMessage) ":" + hostname + "  QUIT " + nick + " :" + quitMessage + "\r\n"
+#define RPL_COMMAND_NOT_FOUND(hostname, nick, command) ":" + hostname + " 404 " + nick + " " + command + " :Command not found\r\n"
 class server
 {
 	public:
 		std::map<int, client> clientServer;
 	public:
+		void		kickclients(std::string channel , int fd);
+		void		updateclients(std::string channel , int fd);
+		std::string clientChannels(std::string channel);
+		bool		alreadyUsedNickname(std::string nickname);
+		std::string	topicName(std::string channelname);
+		void		updateChannelTopic(std::string topic, std::string channelname);
 		bool		checkInvitedPersonnes(std::string name, int channelid, int fd);
-		int			idChannelfd(std::string name,int *fd);
+		int			idChannelfd(std::string name, int *fd);
 		char		memberChannelNumbers(std::string name);
-		int			idChannel(std::string name,int fd);
+		int			idChannel(std::string name, int fd);
 		void		updateMode(std::string channel, int  mode, char sign, std::string arg);
 		void		brodcastMode(std::string channel,std::string mode, int fd, std::vector<std::string> arg);
 		void		applicateMode(char mode, std::string channel,int id,char used, std::vector<std::string> args);
