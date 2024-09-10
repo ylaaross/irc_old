@@ -1039,8 +1039,8 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
             bool b = 0;
             int i = 0;
             char mode = 0;
-            if(firstSplit.size() != 2)
-                message( "More or less argument\n\r" , fd);
+            if(firstSplit.size() < 2)
+                message( "less argument\n\r" , fd);
             else
             {
                 std::vector<std::string>channelSplited = split(firstSplit[1], ',');
