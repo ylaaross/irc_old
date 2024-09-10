@@ -66,6 +66,8 @@ class server
 	public:
 		std::map<int, client> clientServer;
 	public:
+		bool		topicMode(std::string name, int fd);
+		void		displayTopic(std::string topic, std::string channelname);
 		void		kickclients(std::string channel , int fd);
 		void		updateclients(std::string channel , int fd);
 		std::string clientChannels(std::string channel);
