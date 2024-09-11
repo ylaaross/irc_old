@@ -162,7 +162,7 @@ char		server::memberChannelNumbers(std::string name)
         }
         it++;
     }
-    std::cout << "number " << number << std::endl;
+    // std::cout << "number " << number << std::endl;
     return (number);
 }
 
@@ -457,7 +457,7 @@ void server::searchAdd(int fd, std::string ip)
     {
         clientServer[fd] = client();
         clientServer[fd].ipclient = ip;
-        std::cout << fd;
+        // std::cout << fd;
     }
 }
 
@@ -690,7 +690,7 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                         std::cout<< "cannot DELETE key " <<std::endl;   
                 }
                 //limit
-               std::cout << "hna" <<args[1] << std::endl ;
+            //    std::cout << "hna" <<args[1] << std::endl ;
                 if (!args[1].empty() && limitNumber(args[1]))
                 {
                     if((mode & (1 << LIMIT)) && (it->second.channel[i].mode & (1 << LIMIT))  )
@@ -753,7 +753,7 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                     }
                     else if ((mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 0))
                     {
-                        std::cout <<"this is the user"  << it->second.nickname << std::endl;
+                        // std::cout <<"this is the user"  << it->second.nickname << std::endl;
                         clientServer[f].channel[k].op = 1;
                         brodcastMode(channel,"+o", fd, args);
                         updateclients(channel, fd);
@@ -905,9 +905,9 @@ void		server::displayTopic(std::string topic, std::string channelname)
      std::map<int, client>::iterator it = clientServer.begin();
     
     int i;
-     std::cout << "topic name " << topic << std::endl;
-    std::cout << "channel " << channelname << std::endl;
-    std::cout << "topic" << topic;
+    //  std::cout << "topic name " << topic << std::endl;
+    // std::cout << "channel " << channelname << std::endl;
+    // std::cout << "topic" << topic;
     while(it != clientServer.end())
     {
         i = 0;
@@ -993,9 +993,9 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                 {
                     message("Correct password\n\r", fd);
                     clientServer[fd].passB = 1;
-                    std::cout << "passb" << clientServer[fd].passB << std::endl;
-                    std::cout << "nicknameb" << clientServer[fd].nicknameB<< std::endl;
-                    std::cout << "usernameB" << clientServer[fd].usernameB<< std::endl;
+                    // std::cout << "passb" << clientServer[fd].passB << std::endl;
+                    // std::cout << "nicknameb" << clientServer[fd].nicknameB<< std::endl;
+                    // std::cout << "usernameB" << clientServer[fd].usernameB<< std::endl;
                     if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
                     {
                         std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
@@ -1042,7 +1042,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
             std::vector<std::string>username = split(commandLine[i], ':');
             if(count_words(commandLine[i], &tr) == 5 && tr)
             {
-                std::cout << username[1] << std::endl;
+                // std::cout << username[1] << std::endl;
                 clientServer[fd].addUser(username[1]);
                 clientServer[fd].usernameB = 1;
                 if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
@@ -1116,10 +1116,10 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                 id = idChannelfd(channelSplited[i], &fd1);
                                 if (memberChannelNumbers(channelSplited[i]) < clientServer[fd1].channel[id].limit)
                                 {
-                                std::cout << "1" << std::endl;
+                                // std::cout << "1" << std::endl;
 
-                                    std::cout << "bnumber" << memberChannelNumbers(channelSplited[i]) << std::endl;
-                                    std::cout << "limit" <<clientServer[fd1].channel[id].limit << std::endl;
+                                    // std::cout << "bnumber" << memberChannelNumbers(channelSplited[i]) << std::endl;
+                                    // std::cout << "limit" <<clientServer[fd1].channel[id].limit << std::endl;
                                     if (mode & (1 << INVITE_ONLY) && checkInvitedPersonnes(clientServer[fd].nickname, id, fd1 ))
                                     {
                                         if(mode & (1 << KEY) && firstSplit.size() >2)
@@ -1131,13 +1131,10 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                                 message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                                                 updateclients(channelSplited[i], fd);
                                                 displayTopic(topicName(channelSplited[i]), channelSplited[i]);
-                                            message(RPL_NAMREPLY(clientServer[fd].ipclient, clientChannels(channelSplited[i])  , channelSplited[i], clientServer[fd].nickname) , fd);
+                                                message(RPL_NAMREPLY(clientServer[fd].ipclient, clientChannels(channelSplited[i])  , channelSplited[i], clientServer[fd].nickname) , fd);
                                             }
-                                            else
-                                            {
-        
-                                                std::cout << "hnaNOO" << std::endl;
-                                            }
+                                            // else
+                                            //     std::cout << "hnaNOO" << std::endl;
                                         }
                                         else if(mode & (1 << KEY) && firstSplit.size() <= 2)
                                         {
@@ -1147,7 +1144,6 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                         {
                                             clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0, clientServer[fd1].channel[id].invited));
                                             message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                                            // message(RPL_NAMREPLY(clientServer[fd].ipclient, clientChannels(channelSplited[i])  , channelSplited[i], clientServer[fd].nickname) , fd);
                                             updateclients(channelSplited[i], fd);
                                             displayTopic(topicName(channelSplited[i]), channelSplited[i]);
                                         }
@@ -1156,25 +1152,22 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                     {
                                         clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0, clientServer[fd1].channel[id].invited));
                                         message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
-                                        // message(RPL_NAMREPLY(clientServer[fd].ipclient, clientChannels(channelSplited[i])  , channelSplited[i], clientServer[fd].nickname) , fd);
                                         updateclients(channelSplited[i], fd);
                                         displayTopic(topicName(channelSplited[i]), channelSplited[i]);
                                     }
                                 }
                                 else
-                                {
                                     message(ERR_CHANNELISFULL(clientServer[fd].ipclient, clientServer[fd].nickname, channelSplited[i]), fd);
-                                }
                             }
                             else
                             {  
                                 int fd1;
                                 int id;
                                 id = idChannelfd(channelSplited[i], &fd1);
-                                std::cout << "2" << std::endl;
+                                // std::cout << "2" << std::endl;
                                 if (mode & (1 << INVITE_ONLY) && checkInvitedPersonnes(clientServer[fd].nickname, id, fd1))
                                 {
-                                    std::cout << "INVITE ONLY" << std::endl;
+                                    // std::cout << "INVITE ONLY" << std::endl;
                                     clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0, clientServer[fd1].channel[id].invited));
                                     message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                                     
@@ -1186,7 +1179,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                 {
                                     if(mode & (1 << KEY) && firstSplit.size() > 2)
                                     {
-                                        std::cout << "key ONLY" << std::endl;
+                                        // std::cout << "key ONLY" << std::endl;
                                         std::vector<std::string>keySplited = split(firstSplit[2], ',');
                                         if (i <= keySplited.size() && keySplited[i] == clientServer[fd1].channel[id].key)
                                         {
@@ -1206,7 +1199,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                     }
                                     else
                                     {
-                                        std::cout << "no ONLY" << std::endl;
+                                        // std::cout << "no ONLY" << std::endl;
                                         clientServer[fd].channel.push_back(channels(channelSplited[i], modeChannel(channelSplited[i]), 0, clientServer[fd1].channel[id].invited));
                                         message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
                                        
@@ -1214,23 +1207,18 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                         updateclients(channelSplited[i], fd);
                                         displayTopic(topicName(channelSplited[i]), channelSplited[i]);
                                     }
-                                
-                                
-                                
-                                
-                                
+ 
                                 }
                                 else 
-                                {
                                     message(ERR_INVITEONLY(clientServer[fd].nickname, clientServer[fd].ipclient, channelSplited[i]), fd);
-                                }
+                                
 
                             }
 
                         }
                         else
                         {
-                            std::cout << "3" << std::endl;
+                            // std::cout << "3" << std::endl;
                             std::vector<std::string> invited;
                             clientServer[fd].channel.push_back(channels(channelSplited[i], 1 << TOPIC, 1, invited));
                             message(RPL_JOIN(clientServer[fd].nickname, clientServer[fd].username, channelSplited[i], clientServer[fd].ipclient) , fd);
@@ -1253,7 +1241,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                 int j = 0;
                                 while(j < it->second.channel[i].invited.size())
                                 {
-                                    std::cout << it->second.channel[i].invited[j] << std::endl;
+                                    // std::cout << it->second.channel[i].invited[j] << std::endl;
                                     j++;
                                 }
                                 
@@ -1376,10 +1364,7 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                 std::map<int ,int> modes;
 
                 if (firstSplit.size() < 3)
-                {
-                    std::cout << "sss" << std::endl;
                     message(ERR_NEEDMOREPARAMS(clientServer[fd].nickname, clientServer[fd].ipclient , firstSplit[0]), fd);
-                }
                 else
                 {
                     int pos;
@@ -1463,9 +1448,9 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                 i++;
                                 while(i <= pkey)
                                     i++;
-                                std::cout << "pkey" << pkey << std::endl;
-                                 std::cout << "i" << i << std::endl;
-                                 std::cout << "the key "<< firstSplit[i] << std::endl;
+                                // std::cout << "pkey" << pkey << std::endl;
+                                //  std::cout << "i" << i << std::endl;
+                                //  std::cout << "the key "<< firstSplit[i] << std::endl;
                                 if(firstSplit[oi][j] == 'k')
                                 {
                                     
@@ -1531,31 +1516,31 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     
                     if(enter)
                         applicateMode(mode, firstSplit[1], fd, used, args);
-                    if(mode & (1<<POSITIF))
-                       std::cout << " +p" <<std::endl;
-                    else
-                        std::cout << " -p" <<std::endl;
-                    if(mode & (1<<INVITE_ONLY))
-                       std::cout << " +i" <<std::endl;
-                    else
-                        std::cout << " -i" <<std::endl;
-                    if(mode & (1 << LIMIT))
-                        std::cout << " +l" <<std::endl;
-                    else
-                        std::cout << " -l" <<std::endl;
-                    if(mode & (1 << TOPIC))
-                       std::cout << " +t" <<std::endl;
-                    else
-                        std::cout << " -t" <<std::endl;
-                     if(mode & (1 << KEY))
-                       std::cout << " +k" <<std::endl;
-                    else
-                        std::cout << " -k" <<std::endl;
-                      if(mode & (1 << LIMIT))
-                       std::cout << " +l" <<std::endl;
-                    else
-                        std::cout << " -l" <<std::endl;
-                    std::cout << "--" << std::endl;
+                    // if(mode & (1<<POSITIF))
+                    //    std::cout << " +p" <<std::endl;
+                    // else
+                    //     std::cout << " -p" <<std::endl;
+                    // if(mode & (1<<INVITE_ONLY))
+                    //    std::cout << " +i" <<std::endl;
+                    // else
+                    //     std::cout << " -i" <<std::endl;
+                    // if(mode & (1 << LIMIT))
+                    //     std::cout << " +l" <<std::endl;
+                    // else
+                    //     std::cout << " -l" <<std::endl;
+                    // if(mode & (1 << TOPIC))
+                    //    std::cout << " +t" <<std::endl;
+                    // else
+                    //     std::cout << " -t" <<std::endl;
+                    //  if(mode & (1 << KEY))
+                    //    std::cout << " +k" <<std::endl;
+                    // else
+                    //     std::cout << " -k" <<std::endl;
+                    //   if(mode & (1 << LIMIT))
+                    //    std::cout << " +l" <<std::endl;
+                    // else
+                    //     std::cout << " -l" <<std::endl;
+                    // std::cout << "--" << std::endl;
                 }
             }
             else if(checkCommand(firstSplit[0]) == 10 && clientServer[fd].connected)
@@ -1563,7 +1548,6 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                 if (firstSplit.size() == 3)
                 {
                     int j = 0;
-                    std::cout << "ssss" << std::endl;
                     while (j < clientServer[fd].channel.size())
                     {
                         if (clientServer[fd].channel[j].name == firstSplit[1])
@@ -1571,8 +1555,6 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                             clientServer[fd].channel.erase(clientServer[fd].channel.begin() + j);
                             message(RPL_QUIT(clientServer[fd].nickname, clientServer[fd].nickname, firstSplit[2]), fd);
                             kickclients(firstSplit[1], fd);
-                            //kickUser(fd, index, firstSplit[1], reason(commandLine[i],fd));
-
                             break;
                         }
                         j++;
@@ -1605,6 +1587,7 @@ int main(int argc, char **argv)
         char *c;
         int serv_socket;
         struct sockaddr_in ServerAddr, ClientAddr;
+
         socklen_t len = sizeof(ClientAddr);
 
         if ((s = convert_test(argv[1])) == -1 || convert_test(argv[2]) == -1   || argv[2][0] == 0)
@@ -1616,8 +1599,6 @@ int main(int argc, char **argv)
         ServerAddr.sin_family = AF_INET;
         ServerAddr.sin_addr.s_addr = INADDR_ANY;
         ServerAddr.sin_port = htons(s);
-        
-        
         serv_socket = socket(AF_INET, SOCK_STREAM, 0);
         if (serv_socket == -1) 
         {
@@ -1646,6 +1627,7 @@ int main(int argc, char **argv)
         if (fcntl(serv_socket, F_SETFL, O_NONBLOCK) < 0) 
         {
             perror("Failed to set server socket to non-blocking");
+            close(serv_socket);
             exit(EXIT_FAILURE);
         }
 
@@ -1708,7 +1690,6 @@ int main(int argc, char **argv)
                         close(fds[i].fd);
                         std::swap(fds[i], fds.back());
                         fds.pop_back();
-
                         i--;
                     } 
                     else 
@@ -1719,12 +1700,12 @@ int main(int argc, char **argv)
                         if(endOfCommand(b))
                         {
                             std::vector<std::string> vt = splitByCR(b);
-                            int j = 0;
-                            while(j < vt.size())
-                            {
-                                std::cout << vt[j] << std::endl;
-                                j++;
-                            }
+                            // int j = 0;
+                            // while(j < vt.size())
+                            // {
+                            //     std::cout << vt[j] << std::endl;
+                            //     j++;
+                            // }
                             sobj.commandApply(fds[i].fd, vt, password);
                             b = "";
                         }
