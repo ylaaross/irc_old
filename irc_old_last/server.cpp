@@ -745,31 +745,31 @@ void    server::applicateMode(char mode, std::string channel,int fd, char used ,
                     
                    if(b)
                    {
-                    if ((mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 1))
-                    {
-                         std::cout << "nickname" << it->second.nickname <<std::endl;
-                         std::cout << "op" << it->second.channel[i].op <<std::endl;
-                        std::cout<< "already operator" <<std::endl;
-                    }
-                    else if ((mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 0))
-                    {
-                        // std::cout <<"this is the user"  << it->second.nickname << std::endl;
-                        clientServer[f].channel[k].op = 1;
-                        brodcastMode(channel,"+o", fd, args);
-                        updateclients(channel, fd);
-                        std::cout<< "set operator" <<std::endl;
-                    }
-                    else if (!(mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 1))
-                    {
-                        clientServer[f].channel[k].op= 0;
-                        brodcastMode(channel,"-o", fd, args);
-                        updateclients(channel, fd);
-                        std::cout<< "DELETE operator " << std::endl;
-                    }
-                    else if (!(mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 0))
-                    {
-                        std::cout<< "cannot DELETE operator" <<std::endl;
-                    }
+                        if ((mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 1))
+                        {
+                            std::cout << "nickname" << it->second.nickname <<std::endl;
+                            std::cout << "op" << it->second.channel[i].op <<std::endl;
+                            std::cout<< "already operator" <<std::endl;
+                        }
+                        else if ((mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 0))
+                        {
+                            // std::cout <<"this is the user"  << it->second.nickname << std::endl;
+                            clientServer[f].channel[k].op = 1;
+                            brodcastMode(channel,"+o", fd, args);
+                            updateclients(channel, fd);
+                            std::cout<< "set operator" <<std::endl;
+                        }
+                        else if (!(mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 1))
+                        {
+                            clientServer[f].channel[k].op= 0;
+                            brodcastMode(channel,"-o", fd, args);
+                            updateclients(channel, fd);
+                            std::cout<< "DELETE operator " << std::endl;
+                        }
+                        else if (!(mode & (1 << OPERATOR)) && (clientServer[f].channel[k].op == 0))
+                        {
+                            std::cout<< "cannot DELETE operator" <<std::endl;
+                        }
                    }
                     
                 }
@@ -1009,22 +1009,29 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
     
         else if(checkCommand(firstSplit[0]) == 2)
         {
-            if(firstSplit.size() != 2)
+            if (firstSplit.size() != 2)
             {
                 std::string msg = "Error :more or less parameter to use NICK \n\r";
                 message(msg, fd);
             }
             else
             {
-                if(!alreadyUsedNickname(firstSplit[1]))
+                if (!alreadyUsedNickname(firstSplit[1]))
                 {
                     clientServer[fd].addNickname(firstSplit[1]);
-                    message(RPL_NICK_SET(clientServer[fd].ipclient, firstSplit[1]), fd);
-                    clientServer[fd].nicknameB = 1;
-                    clientServer[fd].duplicateNickname = 0;
-                    if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+                    if (clientServer[fd].nicknameB)
                     {
-                        std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
+                        message(RPL_NICK_SET(clientServer[fd].ipclient, firstSplit[1]), fd);
+                        clientServer[fd].duplicateNickname = 0;
+                        if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+                        {
+                            std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
+                            message(msg, fd);
+                        }
+                    }
+                    else
+                    {
+                        std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :The password is required, " + clientServer[fd].nickname + " \r\n";
                         message(msg, fd);
                     }
                 }
@@ -1036,19 +1043,25 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                 }
             }
         }
-        else if(checkCommand(firstSplit[0]) == 3)
+        else if (checkCommand(firstSplit[0]) == 3)
         {
             bool tr=0;
             std::vector<std::string>username = split(commandLine[i], ':');
-            if(count_words(commandLine[i], &tr) == 5 && tr)
+            if (count_words(commandLine[i], &tr) == 5 && tr)
             {
-                // std::cout << username[1] << std::endl;
                 clientServer[fd].addUser(username[1]);
-                clientServer[fd].usernameB = 1;
-                if(clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+                if (clientServer[fd].usernameB)
                 {
-                    std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
-                    message(msg, fd);
+                    if (clientServer[fd].passB && clientServer[fd].nicknameB && clientServer[fd].usernameB)
+                    {
+                        std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :Welcome to the IRC Network, " + clientServer[fd].nickname + " \r\n";        
+                        message (msg, fd);
+                    }
+                }
+                else
+                {
+                    std::string msg = ":ircserv_KAI.chat 001 " + clientServer[fd].nickname + " :The password is required, " + clientServer[fd].nickname + " \r\n";    
+                    message (msg, fd);
                 }
             }
             else
@@ -1117,9 +1130,9 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                 if (memberChannelNumbers(channelSplited[i]) < clientServer[fd1].channel[id].limit)
                                 {
                                 // std::cout << "1" << std::endl;
+                                // std::cout << "bnumber" << memberChannelNumbers(channelSplited[i]) << std::endl;
+                                // std::cout << "limit" <<clientServer[fd1].channel[id].limit << std::endl;
 
-                                    // std::cout << "bnumber" << memberChannelNumbers(channelSplited[i]) << std::endl;
-                                    // std::cout << "limit" <<clientServer[fd1].channel[id].limit << std::endl;
                                     if (mode & (1 << INVITE_ONLY) && checkInvitedPersonnes(clientServer[fd].nickname, id, fd1 ))
                                     {
                                         if(mode & (1 << KEY) && firstSplit.size() >2)
@@ -1274,9 +1287,9 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                     }
                     else if(messagesSplit.size() == 1)
                     {
-                        message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1],topicName(firstSplit[1])),fd);
-                        std::cout << topicName(firstSplit[1]) << std::endl;
-                        std::cout << firstSplit[1] << std::endl;
+                        message(RPL_TOPIC(clientServer[fd].ipclient, clientServer[fd].nickname, firstSplit[1], topicName(firstSplit[1])), fd);
+                        // std::cout << topicName(firstSplit[1]) << std::endl;
+                        // std::cout << firstSplit[1] << std::endl;
                     }
                 }
                 else
@@ -1326,8 +1339,8 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                         message(ERR_NEEDMOREPARAMS(clientServer[fd].nickname, clientServer[fd].ipclient , firstSplit[0]), fd);
                     int index = -1;
                     index = searchForid(firstSplit[1]);
-                    std::cout << "fs1 " << firstSplit[1] << std::endl;
-                    std::cout << "fs2 " << firstSplit[2] << std::endl;
+                    // std::cout << "fs1 " << firstSplit[1] << std::endl;
+                    // std::cout << "fs2 " << firstSplit[2] << std::endl;
                     if (availableChannel(firstSplit[2]))
                     {
                         if (!on_channel(firstSplit[1], fd))
@@ -1480,15 +1493,15 @@ void server::commandApply(int fd,  std::vector<std::string>commandLine, std::str
                                     {
                                         used |= 1 << KEY;
                                         args[0] = firstSplit[i];
-                                        std::cout << "key " << firstSplit[i] << std::endl;
+                                        // std::cout << "key " << firstSplit[i] << std::endl;
                                     }   
                                        
                                     else if(firstSplit[oi][j] == 'l')
                                     {
                                         used |= 1 << LIMIT;
                                         args[1] = firstSplit[i];
-                                        std::cout << args[1] << std::endl;
-                                        std::cout << "limit " << firstSplit[i] << std::endl;
+                                        // std::cout << args[1] << std::endl;
+                                        // std::cout << "limit " << firstSplit[i] << std::endl;
                                     }                                       
                                     else if(firstSplit[oi][j] == 'o')
                                     {
